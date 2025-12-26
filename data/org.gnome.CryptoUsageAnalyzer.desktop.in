@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Crypto Usage Analyzer
+GenericName=Cryptographic Operations Visualizer
+Comment=Visualize cryptographic operations with interactive sunburst charts
+Exec=crypto-usage-analyzer
+Icon=org.gnome.CryptoUsageAnalyzer
+Terminal=false
+Type=Application
+Categories=GTK;GNOME;Development;Security;
+Keywords=crypto;encryption;auditing;visualization;
+StartupNotify=true

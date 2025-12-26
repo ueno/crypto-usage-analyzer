@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.gnome.CryptoUsageAnalyzer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Crypto Usage Analyzer</name>
+  <summary>Visualize cryptographic operations with interactive sunburst charts</summary>
+
+  <description>
+    <p>
+      A native GNOME application for visualizing crypto-auditing data with an interactive
+      sunburst chart, inspired by Baobab's disk usage visualization. Built with modern
+      libadwaita design principles.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Modern GNOME Design with libadwaita</li>
+      <li>Two-pane layout with resizable sidebar</li>
+      <li>Event tree sidebar showing all cryptographic operations</li>
+      <li>Interactive sunburst chart visualization</li>
+      <li>Click to zoom into operation subtrees</li>
+      <li>Algorithm statistics with percentages</li>
+      <li>Color-coded operations for easy identification</li>
+      <li>Detailed tooltips on hover</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">org.gnome.CryptoUsageAnalyzer.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main window showing sunburst visualization</caption>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/simo5/crypto-auditing</url>
+  <url type="bugtracker">https://github.com/simo5/crypto-auditing/issues</url>
+
+  <developer_name>Crypto Auditing Project</developer_name>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="0.1.0" date="2025-12-26">
+      <description>
+        <p>Initial release</p>
+      </description>
+    </release>
+  </releases>
+
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+
+  <recommends>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </recommends>
+</component>
