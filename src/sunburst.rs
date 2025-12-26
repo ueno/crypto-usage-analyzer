@@ -4,7 +4,6 @@ use adw::Banner;
 use cairo::Context;
 use gtk4::prelude::*;
 use gtk4::{gio, ColumnView, Label};
-use humantime::{format_duration, format_rfc3339};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::f64::consts::PI;
@@ -501,14 +500,13 @@ impl SunburstChart {
             let start_time = boot_time + Duration::from_nanos(start_ns);
             let end_time = boot_time + Duration::from_nanos(end_ns);
 
-            // Format using chrono-like formatting (we'll use simple formatting here)
-            let start_text = format!("Start: {}", format_rfc3339(start_time));
-            let end_text = format!("End: {}", format_rfc3339(end_time));
+            let start_time: jiff::Timestamp = start_time.try_into().unwrap();
+            let end_time: jiff::Timestamp = end_time.try_into().unwrap();
+            let start_text = format!("Start: {}", start_time.strftime("%c"));
+            let end_text = format!("End: {}", end_time.strftime("%c"));
 
             // Calculate duration
-            if let Ok(duration) = end_time.duration_since(start_time) {
-                let duration_text = format_duration(duration);
-
+            let duration = end_time.duration_since(start_time);
                 if let Some(label) = self.period_start_label.borrow().as_ref() {
                     label.set_text(&start_text);
                 }
@@ -516,9 +514,8 @@ impl SunburstChart {
                     label.set_text(&end_text);
                 }
                 if let Some(label) = self.period_duration_label.borrow().as_ref() {
-                    label.set_text(&format!("Duration: {}", duration_text));
+                    label.set_text(&format!("Duration: {duration:#}"));
                 }
-            }
         }
     }
 
