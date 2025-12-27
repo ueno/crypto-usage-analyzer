@@ -205,4 +205,142 @@ impl TreeNode {
             child.extract_algorithm_stats(stats);
         }
     }
+
+    /// Create a simplified view by merging nodes with the same label.
+    /// Each node initially has weight 1, and nodes with identical names are merged by adding weights.
+    pub fn create_simple_view(&self) -> Self {
+        // Flatten the tree to remove context grouping
+        let flattened = self.flatten_contexts();
+
+        // Create a new tree where each node starts with weight 1
+        let weighted_tree = flattened.assign_unit_weights();
+
+        // Merge nodes with the same labels from outermost layer inward
+        weighted_tree.merge_by_labels()
+    }
+
+    /// Flatten the tree by removing context grouping layer
+    /// Combines all events from all contexts into a single level
+    fn flatten_contexts(&self) -> Self {
+        // If this is the root "all" node, collect all events from all contexts
+        if self.name == "all" {
+            let mut all_events = Vec::new();
+
+            // Iterate through context nodes (children of root)
+            for context_node in &self.children {
+                // Add all events from this context
+                all_events.extend(context_node.children.clone());
+            }
+
+            TreeNode {
+                name: self.name.clone(),
+                value: all_events.len(),
+                children: all_events,
+            }
+        } else {
+            // For non-root nodes, keep as-is
+            self.clone()
+        }
+    }
+
+    /// Assign weights: leaf nodes get weight 1, parent nodes get sum of children's weights
+    fn assign_unit_weights(&self) -> Self {
+        if self.children.is_empty() {
+            // Leaf node: weight 1
+            TreeNode {
+                name: self.name.clone(),
+                value: 1,
+                children: Vec::new(),
+            }
+        } else {
+            // Parent node: recursively process children and sum their weights
+            let weighted_children: Vec<TreeNode> = self
+                .children
+                .iter()
+                .map(|c| c.assign_unit_weights())
+                .collect();
+
+            let total_weight: usize = weighted_children.iter().map(|c| c.value).sum();
+
+            TreeNode {
+                name: self.name.clone(),
+                value: total_weight,
+                children: weighted_children,
+            }
+        }
+    }
+
+    /// Merge nodes with the same labels, working from outermost layer inward
+    fn merge_by_labels(&self) -> Self {
+        // First, recursively process children (bottom-up approach)
+        let mut processed_children: Vec<TreeNode> = self
+            .children
+            .iter()
+            .map(|child| child.merge_by_labels())
+            .collect();
+
+        // Now merge children with the same name
+        let mut merged_map: HashMap<String, TreeNode> = HashMap::new();
+
+        for child in processed_children {
+            if let Some(existing) = merged_map.get_mut(&child.name) {
+                // Merge: add weights and combine children
+                existing.value += child.value;
+                existing.children.extend(child.children);
+            } else {
+                merged_map.insert(child.name.clone(), child);
+            }
+        }
+
+        // After merging, we need to recursively merge the combined children
+        // because extending children lists may have created duplicates
+        let merged_children: Vec<TreeNode> = merged_map
+            .into_values()
+            .map(|mut node| {
+                // Recursively merge this node's children
+                node.children = Self::merge_children_list(node.children);
+                node
+            })
+            .collect();
+
+        // Sort by value (descending) for consistent ordering
+        let mut sorted_children = merged_children;
+        sorted_children.sort_by(|a, b| b.value.cmp(&a.value));
+
+        TreeNode {
+            name: self.name.clone(),
+            value: self.value,
+            children: sorted_children,
+        }
+    }
+
+    /// Helper function to merge a list of children by their names
+    fn merge_children_list(children: Vec<TreeNode>) -> Vec<TreeNode> {
+        let mut merged_map: HashMap<String, TreeNode> = HashMap::new();
+
+        for child in children {
+            if let Some(existing) = merged_map.get_mut(&child.name) {
+                // Merge: add weights and combine children
+                existing.value += child.value;
+                existing.children.extend(child.children);
+            } else {
+                merged_map.insert(child.name.clone(), child);
+            }
+        }
+
+        // Recursively merge the children of merged nodes
+        let mut result: Vec<TreeNode> = merged_map
+            .into_values()
+            .map(|mut node| {
+                if !node.children.is_empty() {
+                    node.children = Self::merge_children_list(node.children);
+                }
+                node
+            })
+            .collect();
+
+        // Sort by value descending
+        result.sort_by(|a, b| b.value.cmp(&a.value));
+        result
+    }
 }

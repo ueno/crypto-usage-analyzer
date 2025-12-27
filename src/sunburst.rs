@@ -69,6 +69,8 @@ impl Segment {
 pub struct SunburstChart {
     drawing_area: gtk4::DrawingArea,
     data: Rc<RefCell<Option<TreeNode>>>,
+    original_data: Rc<RefCell<Option<TreeNode>>>,
+    simple_view: Rc<RefCell<bool>>,
     segments: Rc<RefCell<Vec<Segment>>>,
     hover_segment: Rc<RefCell<Option<usize>>>,
     zoom_node: Rc<RefCell<Option<TreeNode>>>,
@@ -93,6 +95,8 @@ impl SunburstChart {
         drawing_area.set_has_tooltip(true);
 
         let data = Rc::new(RefCell::new(None));
+        let original_data = Rc::new(RefCell::new(None));
+        let simple_view = Rc::new(RefCell::new(true));
         let segments = Rc::new(RefCell::new(Vec::new()));
         let hover_segment = Rc::new(RefCell::new(None));
         let zoom_node = Rc::new(RefCell::new(None));
@@ -110,6 +114,8 @@ impl SunburstChart {
         let chart = Self {
             drawing_area: drawing_area.clone(),
             data: data.clone(),
+            original_data: original_data.clone(),
+            simple_view: simple_view.clone(),
             segments: segments.clone(),
             hover_segment: hover_segment.clone(),
             zoom_node: zoom_node.clone(),
@@ -424,7 +430,17 @@ impl SunburstChart {
     }
 
     pub fn set_data(&self, data: TreeNode, events: Vec<AuditEvent>) {
-        *self.data.borrow_mut() = Some(data.clone());
+        // Store original data
+        *self.original_data.borrow_mut() = Some(data.clone());
+
+        // Apply simple view if enabled
+        let display_data = if *self.simple_view.borrow() {
+            data.create_simple_view()
+        } else {
+            data.clone()
+        };
+
+        *self.data.borrow_mut() = Some(display_data.clone());
         *self.events.borrow_mut() = events;
         *self.zoom_node.borrow_mut() = None;
 
@@ -436,18 +452,63 @@ impl SunburstChart {
         // Populate tree store
         if let Some(store) = self.tree_store.borrow().as_ref() {
             store.remove_all();
-            Self::populate_tree_store(store, &data);
+            Self::populate_tree_store(store, &display_data);
         }
 
         // Populate stats store
         if let Some(store) = self.stats_store.borrow().as_ref() {
-            Self::populate_stats_store(store, &data);
+            Self::populate_stats_store(store, &display_data);
         }
 
         // Update period labels
         self.update_period_labels();
 
         self.drawing_area.queue_draw();
+    }
+
+    pub fn toggle_simple_view(&self) {
+        // Toggle the flag
+        let new_value = !*self.simple_view.borrow();
+        *self.simple_view.borrow_mut() = new_value;
+
+        // Recompute the data view
+        if let Some(original) = self.original_data.borrow().as_ref() {
+            let display_data = if new_value {
+                original.create_simple_view()
+            } else {
+                original.clone()
+            };
+
+            *self.data.borrow_mut() = Some(display_data.clone());
+
+            // Reset zoom when toggling view
+            *self.zoom_node.borrow_mut() = None;
+
+            // Hide banner
+            if let Some(banner) = self.banner.borrow().as_ref() {
+                banner.set_revealed(false);
+            }
+
+            // Update tree store
+            if let Some(store) = self.tree_store.borrow().as_ref() {
+                store.remove_all();
+                Self::populate_tree_store(store, &display_data);
+            }
+
+            // Update stats store
+            if let Some(store) = self.stats_store.borrow().as_ref() {
+                Self::populate_stats_store(store, &display_data);
+            }
+
+            // Clear selection
+            *self.selected_path.borrow_mut() = Vec::new();
+
+            self.drawing_area.queue_draw();
+        }
+    }
+
+    pub fn is_simple_view(&self) -> bool {
+        *self.simple_view.borrow()
     }
 
     fn populate_tree_store(store: &gio::ListStore, node: &TreeNode) {

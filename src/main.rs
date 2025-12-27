@@ -34,6 +34,12 @@ fn build_ui(app: &Application) {
     // Create hamburger menu
     let menu = gio::Menu::new();
     menu.append(Some("Open File"), Some("app.open"));
+
+    // Add detailed view as a toggle menu item
+    let view_section = gio::Menu::new();
+    view_section.append(Some("Detailed View"), Some("app.detailed-view"));
+    menu.append_section(None, &view_section);
+
     menu.append(Some("About Crypto Usage Analyzer"), Some("app.about"));
 
     let menu_button = gtk4::MenuButton::new();
@@ -405,6 +411,35 @@ fn build_ui(app: &Application) {
         dialog.show();
     });
     app.add_action(&open_action);
+
+    // Set up "detailed-view" stateful action (toggle menu item)
+    // Note: The action state is inverted - checked means detailed view (simple_view = false)
+    let chart_clone = chart.clone();
+    let initial_state = !chart.is_simple_view(); // Inverse: checked = detailed, unchecked = simple
+    let detailed_view_action = gio::SimpleAction::new_stateful(
+        "detailed-view",
+        None,
+        &initial_state.to_variant(),
+    );
+
+    detailed_view_action.connect_change_state({
+        let chart = chart_clone.clone();
+        move |action, state| {
+            if let Some(state) = state {
+                let show_detailed: bool = state.get().unwrap();
+                action.set_state(state);
+
+                // show_detailed is the inverse of simple_view
+                // If show_detailed is true, we want simple_view to be false, and vice versa
+                let should_be_simple = !show_detailed;
+                if chart.is_simple_view() != should_be_simple {
+                    chart.toggle_simple_view();
+                }
+            }
+        }
+    });
+
+    app.add_action(&detailed_view_action);
 
     // Set up "about" action
     let window_clone = window.clone();
