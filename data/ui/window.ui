@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="AdwApplicationWindow" id="window">
+    <property name="title" translatable="yes">Crypto Usage Analyzer</property>
+    <property name="default-width">800</property>
+    <property name="default-height">600</property>
+    <property name="content">
+      <object class="AdwNavigationSplitView" id="split_view">
+        <property name="show-content">true</property>
+        <property name="min-sidebar-width">250</property>
+        <property name="max-sidebar-width">500</property>
+
+        <!-- Sidebar -->
+        <property name="sidebar">
+          <object class="AdwNavigationPage" id="sidebar_page">
+            <property name="title" translatable="yes">Statistics</property>
+            <property name="child">
+              <object class="AdwToolbarView" id="toolbar_view">
+                <child type="top">
+                  <object class="AdwHeaderBar" id="header_bar">
+                    <child type="end">
+                      <object class="GtkMenuButton" id="menu_button">
+                        <property name="icon-name">open-menu-symbolic</property>
+                        <property name="primary">true</property>
+                      </object>
+                    </child>
+                    <child type="end">
+                      <object class="GtkButton" id="reload_button">
+                        <property name="icon-name">view-refresh-symbolic</property>
+                        <property name="tooltip-text" translatable="yes">Reload current file</property>
+                        <property name="sensitive">false</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <property name="content">
+                  <object class="GtkStack" id="main_stack">
+                    <property name="transition-type">crossfade</property>
+
+                    <!-- Empty state -->
+                    <child>
+                      <object class="GtkStackPage">
+                        <property name="name">empty</property>
+                        <property name="child">
+                          <object class="AdwStatusPage" id="status_page">
+                            <property name="icon-name">document-open-symbolic</property>
+                            <property name="title" translatable="yes">No Data Loaded</property>
+                            <property name="description" translatable="yes">Open an audit.json file to visualize crypto usage</property>
+                            <property name="child">
+                              <object class="GtkButton" id="empty_open_button">
+                                <property name="label" translatable="yes">Open File</property>
+                                <style>
+                                  <class name="pill"/>
+                                  <class name="suggested-action"/>
+                                </style>
+                              </object>
+                            </property>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+
+                    <!-- Statistics content -->
+                    <child>
+                      <object class="GtkStackPage">
+                        <property name="name">content</property>
+                        <property name="child">
+                          <object class="GtkBox" id="stats_container">
+                            <property name="orientation">vertical</property>
+
+                            <!-- Sampling Period Section -->
+                            <child>
+                              <object class="GtkBox" id="sampling_period_box">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">6</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">12</property>
+                                <property name="margin-bottom">12</property>
+
+                                <child>
+                                  <object class="GtkLabel" id="period_title">
+                                    <property name="label" translatable="yes">Sampling Period</property>
+                                    <property name="halign">start</property>
+                                    <style>
+                                      <class name="title-4"/>
+                                    </style>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkLabel" id="period_start_label">
+                                    <property name="label" translatable="yes">Start: Not loaded</property>
+                                    <property name="halign">start</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkLabel" id="period_end_label">
+                                    <property name="label" translatable="yes">End: Not loaded</property>
+                                    <property name="halign">start</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkLabel" id="period_duration_label">
+                                    <property name="label" translatable="yes">Duration: Not loaded</property>
+                                    <property name="halign">start</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkSeparator">
+                                    <property name="orientation">horizontal</property>
+                                    <property name="margin-top">6</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
+                            <!-- Events Section -->
+                            <child>
+                              <object class="GtkBox" id="events_box">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">6</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">12</property>
+                                <property name="margin-bottom">12</property>
+
+                                <child>
+                                  <object class="GtkLabel" id="events_title">
+                                    <property name="label" translatable="yes">Most Common Events</property>
+                                    <property name="halign">start</property>
+                                    <style>
+                                      <class name="title-4"/>
+                                    </style>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkScrolledWindow" id="event_stats_scroll">
+                                    <property name="min-content-width">300</property>
+                                    <property name="min-content-height">150</property>
+                                    <property name="max-content-height">200</property>
+                                    <property name="child">
+                                      <object class="GtkColumnView" id="event_stats_view">
+                                        <style>
+                                          <class name="data-table"/>
+                                        </style>
+                                      </object>
+                                    </property>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkSeparator">
+                                    <property name="orientation">horizontal</property>
+                                    <property name="margin-top">6</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
+                            <!-- Algorithms Section -->
+                            <child>
+                              <object class="GtkBox" id="algorithms_box">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">6</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">12</property>
+                                <property name="margin-bottom">12</property>
+
+                                <child>
+                                  <object class="GtkLabel" id="algorithms_title">
+                                    <property name="label" translatable="yes">Most Used Algorithms</property>
+                                    <property name="halign">start</property>
+                                    <style>
+                                      <class name="title-4"/>
+                                    </style>
+                                  </object>
+                                </child>
+
+                                <child>
+                                  <object class="GtkScrolledWindow" id="stats_scroll">
+                                    <property name="min-content-width">300</property>
+                                    <property name="min-content-height">200</property>
+                                    <property name="max-content-height">400</property>
+                                    <property name="child">
+                                      <object class="GtkColumnView" id="stats_view">
+                                        <style>
+                                          <class name="data-table"/>
+                                        </style>
+                                      </object>
+                                    </property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+
+        <!-- Content -->
+        <property name="content">
+          <object class="AdwNavigationPage" id="content_page">
+            <property name="title" translatable="yes">Crypto Usage</property>
+            <property name="child">
+              <object class="GtkBox" id="content_container">
+                <property name="orientation">vertical</property>
+
+                <child>
+                  <object class="AdwViewStack" id="content_view_stack">
+                    <property name="vexpand">true</property>
+
+                    <!-- Sunburst page -->
+                    <child>
+                      <object class="AdwViewStackPage">
+                        <property name="name">sunburst</property>
+                        <property name="title" translatable="yes">Sunburst</property>
+                        <property name="icon-name">view-paged-symbolic</property>
+                        <property name="child">
+                          <object class="GtkBox" id="sunburst_box">
+                            <property name="orientation">vertical</property>
+
+                            <child>
+                              <object class="AdwBanner" id="zoom_banner">
+                                <property name="title" translatable="yes">Click to reset the zoom</property>
+                                <property name="button-label" translatable="yes">Reset</property>
+                                <property name="revealed">false</property>
+                              </object>
+                            </child>
+
+                            <!-- Sunburst chart will be added programmatically -->
+                            <child>
+                              <object class="GtkBox" id="chart_container">
+                                <property name="vexpand">true</property>
+                                <property name="hexpand">true</property>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+
+                    <!-- Tree page -->
+                    <child>
+                      <object class="AdwViewStackPage">
+                        <property name="name">tree</property>
+                        <property name="title" translatable="yes">Event Tree</property>
+                        <property name="icon-name">view-list-symbolic</property>
+                        <property name="child">
+                          <object class="GtkScrolledWindow" id="tree_scroll">
+                            <property name="min-content-width">300</property>
+                            <property name="child">
+                              <object class="GtkColumnView" id="column_view">
+                                <style>
+                                  <class name="data-table"/>
+                                </style>
+                              </object>
+                            </property>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <child>
+                  <object class="AdwViewSwitcherBar" id="content_view_switcher">
+                    <property name="stack">content_view_stack</property>
+                    <property name="reveal">true</property>
+                  </object>
+                </child>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </object>
+</interface>

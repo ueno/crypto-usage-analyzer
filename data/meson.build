@@ -1,3 +1,14 @@
+# Compile gresource
+gnome = import('gnome')
+
+gresource_bundle = gnome.compile_resources(
+  'org.gnome.CryptoUsageAnalyzer',
+  'org.gnome.CryptoUsageAnalyzer.gresource.xml',
+  gresource_bundle: true,
+  install: true,
+  install_dir: get_option('datadir') / 'crypto-usage-analyzer'
+)
+
 # Install desktop file
 configure_file(
   input: 'org.gnome.CryptoUsageAnalyzer.desktop.in',

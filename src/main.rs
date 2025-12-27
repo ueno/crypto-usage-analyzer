@@ -3,15 +3,12 @@ mod models;
 mod sunburst;
 
 use adw::prelude::*;
-use adw::{
-    glib, AboutWindow, Application, ApplicationWindow, Banner, HeaderBar, NavigationPage,
-    NavigationSplitView, StatusPage, ToolbarView, ViewStack, ViewSwitcherBar,
-};
+use adw::{glib, AboutWindow, Application, ApplicationWindow, Banner};
 use anyhow::Result;
 use data::{AuditEvent, TreeNode};
 use gtk4::{
-    gio, Button, ColumnView, ColumnViewColumn, Label, ListItem, Orientation, ScrolledWindow,
-    SignalListItemFactory, SingleSelection, Stack, TreeListModel, TreeListRow,
+    gio, Button, ColumnView, ColumnViewColumn, Label, ListItem, SignalListItemFactory,
+    SingleSelection, Stack, TreeListModel, TreeListRow,
 };
 use models::{StatsObject, TreeNodeObject};
 use std::cell::RefCell;
@@ -22,6 +19,15 @@ use sunburst::SunburstChart;
 const APP_ID: &str = "org.gnome.CryptoUsageAnalyzer";
 
 fn main() -> glib::ExitCode {
+    // Load resources
+    let resources_bytes = include_bytes!(concat!(
+        env!("MESON_BUILD_ROOT"),
+        "/data/org.gnome.CryptoUsageAnalyzer.gresource"
+    ));
+    let resource_data = glib::Bytes::from_static(resources_bytes);
+    let resources = gio::Resource::from_data(&resource_data).expect("Failed to load resources");
+    gio::resources_register(&resources);
+
     let app = Application::builder().application_id(APP_ID).build();
 
     app.connect_activate(build_ui);
@@ -29,51 +35,35 @@ fn main() -> glib::ExitCode {
 }
 
 fn build_ui(app: &Application) {
-    // Create header bar
-    let header_bar = HeaderBar::new();
+    // Load UI from resources
+    let builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/window.ui");
 
-    // Create hamburger menu
-    let menu = gio::Menu::new();
-    menu.append(Some("Open File"), Some("app.open"));
+    // Load menu from resources
+    let menu_builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/menu.ui");
+    let menu: gio::Menu = menu_builder.object("primary_menu").expect("Failed to get primary_menu");
 
-    // Add detailed view as a toggle menu item
-    let view_section = gio::Menu::new();
-    view_section.append(Some("Detailed View"), Some("app.detailed-view"));
-    menu.append_section(None, &view_section);
+    // Get widgets from builder
+    let window: ApplicationWindow = builder.object("window").expect("Failed to get window");
+    let menu_button: gtk4::MenuButton = builder.object("menu_button").expect("Failed to get menu_button");
+    let reload_button: Button = builder.object("reload_button").expect("Failed to get reload_button");
+    let main_stack: Stack = builder.object("main_stack").expect("Failed to get main_stack");
+    let empty_button: Button = builder.object("empty_open_button").expect("Failed to get empty_open_button");
+    let column_view: ColumnView = builder.object("column_view").expect("Failed to get column_view");
+    let stats_view: ColumnView = builder.object("stats_view").expect("Failed to get stats_view");
+    let event_stats_view: ColumnView = builder.object("event_stats_view").expect("Failed to get event_stats_view");
+    let chart_container: gtk4::Box = builder.object("chart_container").expect("Failed to get chart_container");
+    let zoom_banner: Banner = builder.object("zoom_banner").expect("Failed to get zoom_banner");
+    let period_start_label: Label = builder.object("period_start_label").expect("Failed to get period_start_label");
+    let period_end_label: Label = builder.object("period_end_label").expect("Failed to get period_end_label");
+    let period_duration_label: Label = builder.object("period_duration_label").expect("Failed to get period_duration_label");
 
-    menu.append(Some("About Crypto Usage Analyzer"), Some("app.about"));
+    // Set the application window
+    window.set_application(Some(app));
 
-    let menu_button = gtk4::MenuButton::new();
-    menu_button.set_icon_name("open-menu-symbolic");
+    // Set menu model on menu button
     menu_button.set_menu_model(Some(&menu));
-    header_bar.pack_end(&menu_button);
 
-    // Create reload button (packed after menu so it appears to the left)
-    let reload_button = Button::new();
-    reload_button.set_icon_name("view-refresh-symbolic");
-    reload_button.set_tooltip_text(Some("Reload current file"));
-    reload_button.set_sensitive(false); // Disabled until a file is loaded
-    header_bar.pack_end(&reload_button);
-
-    // Create stack for switching between empty state and split view
-    let stack = Stack::new();
-    stack.set_transition_type(gtk4::StackTransitionType::Crossfade);
-
-    // Create empty state with status page
-    let status_page = StatusPage::builder()
-        .icon_name("document-open-symbolic")
-        .title("No Data Loaded")
-        .description("Open an audit.json file to visualize crypto usage")
-        .build();
-
-    let empty_button = Button::with_label("Open File");
-    empty_button.add_css_class("pill");
-    empty_button.add_css_class("suggested-action");
-    status_page.set_child(Some(&empty_button));
-
-    stack.add_named(&status_page, Some("empty"));
-
-    // Create tree list model for sidebar
+    // Create tree list model for the tree view
     let root_store = gio::ListStore::new::<TreeNodeObject>();
 
     let tree_model = TreeListModel::new(
@@ -89,8 +79,7 @@ fn build_ui(app: &Application) {
     );
 
     let selection_model = SingleSelection::new(Some(tree_model));
-    let column_view = ColumnView::new(Some(selection_model.clone()));
-    column_view.add_css_class("data-table");
+    column_view.set_model(Some(&selection_model));
 
     // Create "Operation" column
     let name_factory = SignalListItemFactory::new();
@@ -143,61 +132,17 @@ fn build_ui(app: &Application) {
     let count_column = ColumnViewColumn::new(Some("Count"), Some(count_factory));
     column_view.append_column(&count_column);
 
-    // Wrap column view in scrolled window
-    let tree_scroll = ScrolledWindow::new();
-    tree_scroll.set_child(Some(&column_view));
-    tree_scroll.set_min_content_width(300);
+    // Create list stores for statistics views
+    let stats_store = gio::ListStore::new::<StatsObject>();
+    let stats_selection = SingleSelection::new(Some(stats_store.clone()));
+    stats_view.set_model(Some(&stats_selection));
 
-    // Create sampling period section
-    let sampling_period_box = gtk4::Box::new(Orientation::Vertical, 6);
-    sampling_period_box.set_margin_start(12);
-    sampling_period_box.set_margin_end(12);
-    sampling_period_box.set_margin_top(12);
-    sampling_period_box.set_margin_bottom(12);
-
-    let period_title = gtk4::Label::new(Some("Sampling Period"));
-    period_title.set_halign(gtk4::Align::Start);
-    period_title.add_css_class("title-4");
-    sampling_period_box.append(&period_title);
-
-    let period_start_label = gtk4::Label::new(Some("Start: Not loaded"));
-    period_start_label.set_halign(gtk4::Align::Start);
-    period_start_label.add_css_class("dim-label");
-    sampling_period_box.append(&period_start_label);
-
-    let period_end_label = gtk4::Label::new(Some("End: Not loaded"));
-    period_end_label.set_halign(gtk4::Align::Start);
-    period_end_label.add_css_class("dim-label");
-    sampling_period_box.append(&period_end_label);
-
-    let period_duration_label = gtk4::Label::new(Some("Duration: Not loaded"));
-    period_duration_label.set_halign(gtk4::Align::Start);
-    period_duration_label.add_css_class("dim-label");
-    sampling_period_box.append(&period_duration_label);
-
-    let separator = gtk4::Separator::new(Orientation::Horizontal);
-    separator.set_margin_top(6);
-    sampling_period_box.append(&separator);
-
-    // Create most common events section
-    let events_box = gtk4::Box::new(Orientation::Vertical, 6);
-    events_box.set_margin_start(12);
-    events_box.set_margin_end(12);
-    events_box.set_margin_top(12);
-    events_box.set_margin_bottom(12);
-
-    let events_title = gtk4::Label::new(Some("Most Common Events"));
-    events_title.set_halign(gtk4::Align::Start);
-    events_title.add_css_class("title-4");
-    events_box.append(&events_title);
-
-    // Create event statistics view
     let event_stats_store = gio::ListStore::new::<StatsObject>();
     let event_stats_selection = SingleSelection::new(Some(event_stats_store.clone()));
-    let event_stats_view = ColumnView::new(Some(event_stats_selection));
-    event_stats_view.add_css_class("data-table");
+    event_stats_view.set_model(Some(&event_stats_selection));
 
-    // Create "Event" column for event stats
+    // Setup columns for event statistics view (event_stats_view)
+    // "Event" column for event stats
     let event_factory = SignalListItemFactory::new();
     event_factory.connect_setup(|_, list_item| {
         let label = Label::new(None);
@@ -255,39 +200,8 @@ fn build_ui(app: &Application) {
     let event_percent_column = ColumnViewColumn::new(Some("%"), Some(event_percent_factory));
     event_stats_view.append_column(&event_percent_column);
 
-    // Wrap event statistics view in scrolled window
-    let event_stats_scroll = ScrolledWindow::new();
-    event_stats_scroll.set_child(Some(&event_stats_view));
-    event_stats_scroll.set_min_content_width(300);
-    event_stats_scroll.set_min_content_height(150);
-    event_stats_scroll.set_max_content_height(200);
-
-    // Add the scrolled window to events box
-    events_box.append(&event_stats_scroll);
-
-    let separator2 = gtk4::Separator::new(Orientation::Horizontal);
-    separator2.set_margin_top(6);
-    events_box.append(&separator2);
-
-    // Create algorithms section
-    let algorithms_box = gtk4::Box::new(Orientation::Vertical, 6);
-    algorithms_box.set_margin_start(12);
-    algorithms_box.set_margin_end(12);
-    algorithms_box.set_margin_top(12);
-    algorithms_box.set_margin_bottom(12);
-
-    let algorithms_title = gtk4::Label::new(Some("Most Used Algorithms"));
-    algorithms_title.set_halign(gtk4::Align::Start);
-    algorithms_title.add_css_class("title-4");
-    algorithms_box.append(&algorithms_title);
-
-    // Create statistics view
-    let stats_store = gio::ListStore::new::<StatsObject>();
-    let stats_selection = SingleSelection::new(Some(stats_store.clone()));
-    let stats_view = ColumnView::new(Some(stats_selection));
-    stats_view.add_css_class("data-table");
-
-    // Create "Algorithm" column
+    // Setup columns for algorithms statistics view (stats_view)
+    // "Algorithm" column
     let algo_factory = SignalListItemFactory::new();
     algo_factory.connect_setup(|_, list_item| {
         let label = Label::new(None);
@@ -342,37 +256,9 @@ fn build_ui(app: &Application) {
     let percent_column = ColumnViewColumn::new(Some("%"), Some(percent_factory));
     stats_view.append_column(&percent_column);
 
-    // Wrap statistics view in scrolled window
-    let stats_scroll = ScrolledWindow::new();
-    stats_scroll.set_child(Some(&stats_view));
-    stats_scroll.set_min_content_width(300);
-    stats_scroll.set_min_content_height(200);
-    stats_scroll.set_max_content_height(400);
-
-    // Add the scrolled window to algorithms box
-    algorithms_box.append(&stats_scroll);
-
-    // Create stats container with period section, events section, and algorithms section
-    let stats_container = gtk4::Box::new(Orientation::Vertical, 0);
-    stats_container.append(&sampling_period_box);
-    stats_container.append(&events_box);
-    stats_container.append(&algorithms_box);
-
-    // Create sidebar page with statistics only
-    let sidebar_page = NavigationPage::builder()
-        .title("Statistics")
-        .child(&stats_container)
-        .build();
-
-    // Create banner for zoom notification
-    let banner = Banner::new("");
-    banner.set_title("Click to reset the zoom");
-    banner.set_button_label(Some("Reset"));
-    banner.set_revealed(false);
-
-    // Create sunburst chart
+    // Create and setup sunburst chart
     let chart = Rc::new(SunburstChart::new());
-    chart.set_zoom_banner(banner.clone());
+    chart.set_zoom_banner(zoom_banner.clone());
     chart.set_tree_store(root_store.clone());
     chart.set_column_view(column_view.clone());
     chart.set_stats_store(stats_store.clone());
@@ -383,10 +269,8 @@ fn build_ui(app: &Application) {
         period_duration_label.clone(),
     );
 
-    // Create sunburst view container (banner + chart)
-    let sunburst_box = gtk4::Box::new(Orientation::Vertical, 0);
-    sunburst_box.append(&banner);
-    sunburst_box.append(chart.widget());
+    // Add sunburst chart to the chart container
+    chart_container.append(chart.widget());
 
     // Connect tree selection to chart highlighting
     let chart_clone = chart.clone();
@@ -411,58 +295,8 @@ fn build_ui(app: &Application) {
         }
     });
 
-    // Create view stack for content area
-    let content_view_stack = ViewStack::new();
-    content_view_stack.set_vexpand(true);
-
-    let sunburst_page = content_view_stack.add_titled(&sunburst_box, Some("sunburst"), "Sunburst");
-    sunburst_page.set_icon_name(Some("view-paged-symbolic"));
-
-    let tree_page = content_view_stack.add_titled(&tree_scroll, Some("tree"), "Event Tree");
-    tree_page.set_icon_name(Some("view-list-symbolic"));
-
-    // Create view switcher bar for content
-    let content_view_switcher = ViewSwitcherBar::new();
-    content_view_switcher.set_stack(Some(&content_view_stack));
-    content_view_switcher.set_reveal(true);
-
-    // Create content container with view stack and switcher
-    let content_container = gtk4::Box::new(Orientation::Vertical, 0);
-    content_container.append(&content_view_stack);
-    content_container.append(&content_view_switcher);
-
-    // Create content page
-    let content_page = NavigationPage::builder()
-        .title("Crypto Usage")
-        .child(&content_container)
-        .build();
-
-    // Create navigation split view
-    let split_view = NavigationSplitView::new();
-    split_view.set_sidebar(Some(&sidebar_page));
-    split_view.set_content(Some(&content_page));
-    split_view.set_show_content(true);
-    split_view.set_min_sidebar_width(250.0);
-    split_view.set_max_sidebar_width(500.0);
-
-    stack.add_named(&split_view, Some("content"));
-
-    // Set initial page
-    stack.set_visible_child_name("empty");
-
-    // Create toolbar view (modern Adwaita pattern)
-    let toolbar_view = ToolbarView::new();
-    toolbar_view.add_top_bar(&header_bar);
-    toolbar_view.set_content(Some(&stack));
-
-    // Create window
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("Crypto Usage Analyzer")
-        .default_width(1100)
-        .default_height(800)
-        .content(&toolbar_view)
-        .build();
+    // Set initial page to empty state
+    main_stack.set_visible_child_name("empty");
 
     // Track current file path for reload functionality
     let current_file_path = Rc::new(RefCell::new(Option::<String>::None));
@@ -470,7 +304,7 @@ fn build_ui(app: &Application) {
     // Set up "open" action
     let window_clone = window.clone();
     let chart_clone = chart.clone();
-    let stack_clone = stack.clone();
+    let main_stack_clone = main_stack.clone();
     let current_file_path_clone = current_file_path.clone();
     let reload_button_clone = reload_button.clone();
 
@@ -498,7 +332,7 @@ fn build_ui(app: &Application) {
         dialog.add_filter(&all_filter);
 
         let chart = chart_clone.clone();
-        let stack = stack_clone.clone();
+        let main_stack = main_stack_clone.clone();
         let current_file_path = current_file_path_clone.clone();
         let reload_button = reload_button_clone.clone();
 
@@ -508,7 +342,7 @@ fn build_ui(app: &Application) {
                     if let Some(path) = file.path() {
                         let path_str = path.to_string_lossy().to_string();
                         if load_and_display(&path_str, &chart).is_ok() {
-                            stack.set_visible_child_name("content");
+                            main_stack.set_visible_child_name("content");
                             *current_file_path.borrow_mut() = Some(path_str);
                             reload_button.set_sensitive(true);
                         }
@@ -590,7 +424,7 @@ fn build_ui(app: &Application) {
     let default_path = "audit.json";
     if std::path::Path::new(default_path).exists()
         && load_and_display(default_path, &chart).is_ok() {
-            stack.set_visible_child_name("content");
+            main_stack.set_visible_child_name("content");
             *current_file_path.borrow_mut() = Some(default_path.to_string());
             reload_button.set_sensitive(true);
         }
