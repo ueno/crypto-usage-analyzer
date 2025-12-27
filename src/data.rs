@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AuditEvent {
@@ -124,8 +124,8 @@ impl TreeNode {
             children: Vec::new(),
         };
 
-        // Group by context
-        let mut context_map: HashMap<String, Vec<&AuditEvent>> = HashMap::new();
+        // Group by context using BTreeMap for consistent ordering
+        let mut context_map: BTreeMap<String, Vec<&AuditEvent>> = BTreeMap::new();
         for event in events {
             context_map
                 .entry(event.context.clone())
@@ -291,8 +291,8 @@ impl TreeNode {
             .map(|child| child.merge_by_labels())
             .collect();
 
-        // Now merge children with the same name
-        let mut merged_map: HashMap<String, TreeNode> = HashMap::new();
+        // Now merge children with the same name using BTreeMap for consistent ordering
+        let mut merged_map: BTreeMap<String, TreeNode> = BTreeMap::new();
 
         for child in processed_children {
             if let Some(existing) = merged_map.get_mut(&child.name) {
@@ -328,7 +328,7 @@ impl TreeNode {
 
     /// Helper function to merge a list of children by their names
     fn merge_children_list(children: Vec<TreeNode>) -> Vec<TreeNode> {
-        let mut merged_map: HashMap<String, TreeNode> = HashMap::new();
+        let mut merged_map: BTreeMap<String, TreeNode> = BTreeMap::new();
 
         for child in children {
             if let Some(existing) = merged_map.get_mut(&child.name) {

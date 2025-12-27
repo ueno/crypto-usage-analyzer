@@ -366,7 +366,7 @@ impl SunburstChart {
         cr.close_path();
         cr.fill().unwrap();
 
-        // Draw border
+        // Draw border (only the arcs, not the radial lines)
         if is_selected {
             // Thicker, more visible border for selected segment
             cr.set_source_rgb(0.0, 0.4, 0.8);
@@ -375,9 +375,15 @@ impl SunburstChart {
             cr.set_source_rgb(1.0, 1.0, 1.0);
             cr.set_line_width(1.0);
         }
+
+        // Only draw the outer and inner arcs, skip radial lines
+        // This prevents the line from center to east at angle 0
+        cr.new_path();
         cr.arc(cx, cy, current_outer, start_angle, end_angle);
-        cr.arc_negative(cx, cy, current_inner, end_angle, start_angle);
-        cr.close_path();
+        cr.stroke().unwrap();
+
+        cr.new_path();
+        cr.arc(cx, cy, current_inner, start_angle, end_angle);
         cr.stroke().unwrap();
 
         cr.restore().unwrap();
