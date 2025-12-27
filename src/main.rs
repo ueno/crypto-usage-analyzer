@@ -14,6 +14,7 @@ use gtk4::{
     SignalListItemFactory, SingleSelection, Stack, TreeListModel, TreeListRow,
 };
 use models::{StatsObject, TreeNodeObject};
+use std::cell::RefCell;
 use std::fs;
 use std::rc::Rc;
 use sunburst::SunburstChart;
@@ -46,6 +47,13 @@ fn build_ui(app: &Application) {
     menu_button.set_icon_name("open-menu-symbolic");
     menu_button.set_menu_model(Some(&menu));
     header_bar.pack_end(&menu_button);
+
+    // Create reload button (packed after menu so it appears to the left)
+    let reload_button = Button::new();
+    reload_button.set_icon_name("view-refresh-symbolic");
+    reload_button.set_tooltip_text(Some("Reload current file"));
+    reload_button.set_sensitive(false); // Disabled until a file is loaded
+    header_bar.pack_end(&reload_button);
 
     // Create stack for switching between empty state and split view
     let stack = Stack::new();
@@ -456,10 +464,15 @@ fn build_ui(app: &Application) {
         .content(&toolbar_view)
         .build();
 
+    // Track current file path for reload functionality
+    let current_file_path = Rc::new(RefCell::new(Option::<String>::None));
+
     // Set up "open" action
     let window_clone = window.clone();
     let chart_clone = chart.clone();
     let stack_clone = stack.clone();
+    let current_file_path_clone = current_file_path.clone();
+    let reload_button_clone = reload_button.clone();
 
     let open_action = gio::SimpleAction::new("open", None);
     open_action.connect_activate(move |_, _| {
@@ -486,13 +499,18 @@ fn build_ui(app: &Application) {
 
         let chart = chart_clone.clone();
         let stack = stack_clone.clone();
+        let current_file_path = current_file_path_clone.clone();
+        let reload_button = reload_button_clone.clone();
 
         dialog.connect_response(move |dialog, response| {
             if response == gtk4::ResponseType::Accept {
                 if let Some(file) = dialog.file() {
                     if let Some(path) = file.path() {
-                        if load_and_display(&path.to_string_lossy(), &chart).is_ok() {
+                        let path_str = path.to_string_lossy().to_string();
+                        if load_and_display(&path_str, &chart).is_ok() {
                             stack.set_visible_child_name("content");
+                            *current_file_path.borrow_mut() = Some(path_str);
+                            reload_button.set_sensitive(true);
                         }
                     }
                 }
@@ -559,11 +577,22 @@ fn build_ui(app: &Application) {
         app_clone.activate_action("open", None);
     });
 
+    // Set up reload button action
+    let chart_reload = chart.clone();
+    let current_file_path_reload = current_file_path.clone();
+    reload_button.connect_clicked(move |_| {
+        if let Some(path) = current_file_path_reload.borrow().as_ref() {
+            let _ = load_and_display(path, &chart_reload);
+        }
+    });
+
     // Try to load default file if it exists
     let default_path = "audit.json";
     if std::path::Path::new(default_path).exists()
         && load_and_display(default_path, &chart).is_ok() {
             stack.set_visible_child_name("content");
+            *current_file_path.borrow_mut() = Some(default_path.to_string());
+            reload_button.set_sensitive(true);
         }
 
     window.present();
