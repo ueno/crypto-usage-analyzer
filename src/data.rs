@@ -206,6 +206,18 @@ impl TreeNode {
         }
     }
 
+    pub fn extract_event_stats(&self, stats: &mut HashMap<String, usize>) {
+        // Add this node's weight (only if it's not the root "all" node)
+        if self.name != "all" {
+            *stats.entry(self.name.clone()).or_insert(0) += self.value;
+        }
+
+        // Recursively process children
+        for child in &self.children {
+            child.extract_event_stats(stats);
+        }
+    }
+
     /// Create a simplified view by merging nodes with the same label.
     /// Each node initially has weight 1, and nodes with identical names are merged by adding weights.
     pub fn create_simple_view(&self) -> Self {

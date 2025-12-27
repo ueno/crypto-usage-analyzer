@@ -171,6 +171,96 @@ fn build_ui(app: &Application) {
     separator.set_margin_top(6);
     sampling_period_box.append(&separator);
 
+    // Create most common events section
+    let events_box = gtk4::Box::new(Orientation::Vertical, 6);
+    events_box.set_margin_start(12);
+    events_box.set_margin_end(12);
+    events_box.set_margin_top(12);
+    events_box.set_margin_bottom(12);
+
+    let events_title = gtk4::Label::new(Some("Most Common Events"));
+    events_title.set_halign(gtk4::Align::Start);
+    events_title.add_css_class("title-4");
+    events_box.append(&events_title);
+
+    // Create event statistics view
+    let event_stats_store = gio::ListStore::new::<StatsObject>();
+    let event_stats_selection = SingleSelection::new(Some(event_stats_store.clone()));
+    let event_stats_view = ColumnView::new(Some(event_stats_selection));
+    event_stats_view.add_css_class("data-table");
+
+    // Create "Event" column for event stats
+    let event_factory = SignalListItemFactory::new();
+    event_factory.connect_setup(|_, list_item| {
+        let label = Label::new(None);
+        label.set_halign(gtk4::Align::Start);
+        label.set_margin_start(4);
+        label.set_margin_end(4);
+        label.set_wrap(true);
+        label.set_wrap_mode(gtk4::pango::WrapMode::WordChar);
+        label.set_max_width_chars(30);
+        list_item.set_child(Some(&label));
+    });
+    event_factory.connect_bind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
+        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
+        let label = list_item.child().and_downcast::<Label>().unwrap();
+        label.set_text(&stats_obj.algorithm());
+    });
+    let event_column = ColumnViewColumn::new(Some("Event"), Some(event_factory));
+    event_column.set_expand(true);
+    event_stats_view.append_column(&event_column);
+
+    // Create "Count" column for event stats
+    let event_count_factory = SignalListItemFactory::new();
+    event_count_factory.connect_setup(|_, list_item| {
+        let label = Label::new(None);
+        label.set_halign(gtk4::Align::End);
+        label.set_margin_start(4);
+        label.set_margin_end(4);
+        list_item.set_child(Some(&label));
+    });
+    event_count_factory.connect_bind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
+        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
+        let label = list_item.child().and_downcast::<Label>().unwrap();
+        label.set_text(&stats_obj.count());
+    });
+    let event_count_column = ColumnViewColumn::new(Some("Count"), Some(event_count_factory));
+    event_stats_view.append_column(&event_count_column);
+
+    // Create "Percentage" column for event stats
+    let event_percent_factory = SignalListItemFactory::new();
+    event_percent_factory.connect_setup(|_, list_item| {
+        let label = Label::new(None);
+        label.set_halign(gtk4::Align::End);
+        label.set_margin_start(4);
+        label.set_margin_end(4);
+        list_item.set_child(Some(&label));
+    });
+    event_percent_factory.connect_bind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
+        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
+        let label = list_item.child().and_downcast::<Label>().unwrap();
+        label.set_text(&stats_obj.percentage());
+    });
+    let event_percent_column = ColumnViewColumn::new(Some("%"), Some(event_percent_factory));
+    event_stats_view.append_column(&event_percent_column);
+
+    // Wrap event statistics view in scrolled window
+    let event_stats_scroll = ScrolledWindow::new();
+    event_stats_scroll.set_child(Some(&event_stats_view));
+    event_stats_scroll.set_min_content_width(300);
+    event_stats_scroll.set_min_content_height(150);
+    event_stats_scroll.set_max_content_height(200);
+
+    // Add the scrolled window to events box
+    events_box.append(&event_stats_scroll);
+
+    let separator2 = gtk4::Separator::new(Orientation::Horizontal);
+    separator2.set_margin_top(6);
+    events_box.append(&separator2);
+
     // Create algorithms section
     let algorithms_box = gtk4::Box::new(Orientation::Vertical, 6);
     algorithms_box.set_margin_start(12);
@@ -241,7 +331,7 @@ fn build_ui(app: &Application) {
         let label = list_item.child().and_downcast::<Label>().unwrap();
         label.set_text(&stats_obj.percentage());
     });
-    let percent_column = ColumnViewColumn::new(Some("Percentage"), Some(percent_factory));
+    let percent_column = ColumnViewColumn::new(Some("%"), Some(percent_factory));
     stats_view.append_column(&percent_column);
 
     // Wrap statistics view in scrolled window
@@ -254,9 +344,10 @@ fn build_ui(app: &Application) {
     // Add the scrolled window to algorithms box
     algorithms_box.append(&stats_scroll);
 
-    // Create stats container with period section and algorithms section
+    // Create stats container with period section, events section, and algorithms section
     let stats_container = gtk4::Box::new(Orientation::Vertical, 0);
     stats_container.append(&sampling_period_box);
+    stats_container.append(&events_box);
     stats_container.append(&algorithms_box);
 
     // Create sidebar page with statistics only
@@ -277,6 +368,7 @@ fn build_ui(app: &Application) {
     chart.set_tree_store(root_store.clone());
     chart.set_column_view(column_view.clone());
     chart.set_stats_store(stats_store.clone());
+    chart.set_event_stats_store(event_stats_store.clone());
     chart.set_period_labels(
         period_start_label.clone(),
         period_end_label.clone(),

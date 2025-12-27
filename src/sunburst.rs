@@ -79,6 +79,7 @@ pub struct SunburstChart {
     selected_path: Rc<RefCell<Vec<String>>>,
     column_view: Rc<RefCell<Option<ColumnView>>>,
     stats_store: Rc<RefCell<Option<gio::ListStore>>>,
+    event_stats_store: Rc<RefCell<Option<gio::ListStore>>>,
     events: Rc<RefCell<Vec<AuditEvent>>>,
     period_start_label: Rc<RefCell<Option<Label>>>,
     period_end_label: Rc<RefCell<Option<Label>>>,
@@ -104,6 +105,7 @@ impl SunburstChart {
         let tree_store = Rc::new(RefCell::new(None));
         let selected_path = Rc::new(RefCell::new(Vec::new()));
         let stats_store = Rc::new(RefCell::new(None));
+        let event_stats_store = Rc::new(RefCell::new(None));
         let events = Rc::new(RefCell::new(Vec::new()));
         let period_start_label = Rc::new(RefCell::new(None));
         let period_end_label = Rc::new(RefCell::new(None));
@@ -124,6 +126,7 @@ impl SunburstChart {
             selected_path: selected_path.clone(),
             column_view: column_view.clone(),
             stats_store: stats_store.clone(),
+            event_stats_store: event_stats_store.clone(),
             events: events.clone(),
             period_start_label: period_start_label.clone(),
             period_end_label: period_end_label.clone(),
@@ -224,6 +227,7 @@ impl SunburstChart {
         let tree_store_clone = tree_store.clone();
         let data_clone = data.clone();
         let stats_store_clone = stats_store.clone();
+        let event_stats_store_clone = event_stats_store.clone();
 
         let selected_path_clone = selected_path.clone();
 
@@ -254,6 +258,10 @@ impl SunburstChart {
                             if let Some(store) = stats_store_clone.borrow().as_ref() {
                                 SunburstChart::populate_stats_store(store, data);
                             }
+                            // Restore full event stats
+                            if let Some(store) = event_stats_store_clone.borrow().as_ref() {
+                                SunburstChart::populate_event_stats_store(store, data);
+                            }
                         }
                         // Clear selection highlighting
                         *selected_path_clone.borrow_mut() = Vec::new();
@@ -272,6 +280,10 @@ impl SunburstChart {
                         // Update stats store for the zoomed subtree
                         if let Some(store) = stats_store_clone.borrow().as_ref() {
                             SunburstChart::populate_stats_store(store, &seg.node);
+                        }
+                        // Update event stats store for the zoomed subtree
+                        if let Some(store) = event_stats_store_clone.borrow().as_ref() {
+                            SunburstChart::populate_event_stats_store(store, &seg.node);
                         }
                         // Clear selection highlighting when zooming
                         *selected_path_clone.borrow_mut() = Vec::new();
@@ -460,6 +472,11 @@ impl SunburstChart {
             Self::populate_stats_store(store, &display_data);
         }
 
+        // Populate event stats store
+        if let Some(store) = self.event_stats_store.borrow().as_ref() {
+            Self::populate_event_stats_store(store, &display_data);
+        }
+
         // Update period labels
         self.update_period_labels();
 
@@ -498,6 +515,11 @@ impl SunburstChart {
             // Update stats store
             if let Some(store) = self.stats_store.borrow().as_ref() {
                 Self::populate_stats_store(store, &display_data);
+            }
+
+            // Update event stats store
+            if let Some(store) = self.event_stats_store.borrow().as_ref() {
+                Self::populate_event_stats_store(store, &display_data);
             }
 
             // Clear selection
@@ -543,6 +565,10 @@ impl SunburstChart {
 
     pub fn set_stats_store(&self, stats_store: gio::ListStore) {
         *self.stats_store.borrow_mut() = Some(stats_store);
+    }
+
+    pub fn set_event_stats_store(&self, event_stats_store: gio::ListStore) {
+        *self.event_stats_store.borrow_mut() = Some(event_stats_store);
     }
 
     pub fn set_period_labels(&self, start_label: Label, end_label: Label, duration_label: Label) {
@@ -611,6 +637,40 @@ impl SunburstChart {
         }
     }
 
+    fn populate_event_stats_store(store: &gio::ListStore, node: &TreeNode) {
+        store.remove_all();
+
+        let mut stats: HashMap<String, usize> = HashMap::new();
+        node.extract_event_stats(&mut stats);
+
+        if stats.is_empty() {
+            return;
+        }
+
+        // Calculate total for percentages
+        let total: usize = stats.values().sum();
+
+        // Sort by count (descending)
+        let mut stats_vec: Vec<_> = stats.into_iter().collect();
+        stats_vec.sort_by(|a, b| b.1.cmp(&a.1));
+
+        // Populate store with top 5 only
+        for (event_name, count) in stats_vec.iter().take(5) {
+            let percentage = if total > 0 {
+                (count * 100) as f64 / total as f64
+            } else {
+                0.0
+            };
+
+            let stats_obj = StatsObject::new(
+                event_name,
+                &count.to_string(),
+                &format!("{:.1}%", percentage),
+            );
+            store.append(&stats_obj);
+        }
+    }
+
     pub fn set_selected_path(&self, path: Vec<String>) {
         *self.selected_path.borrow_mut() = path;
         self.drawing_area.queue_draw();
@@ -624,6 +684,7 @@ impl SunburstChart {
         let data_clone = self.data.clone();
         let tree_store_clone = self.tree_store.clone();
         let stats_store_clone = self.stats_store.clone();
+        let event_stats_store_clone = self.event_stats_store.clone();
         let selected_path_clone = self.selected_path.clone();
 
         banner.connect_button_clicked(move |_| {
@@ -639,6 +700,10 @@ impl SunburstChart {
                 // Restore full stats
                 if let Some(store) = stats_store_clone.borrow().as_ref() {
                     SunburstChart::populate_stats_store(store, data);
+                }
+                // Restore full event stats
+                if let Some(store) = event_stats_store_clone.borrow().as_ref() {
+                    SunburstChart::populate_event_stats_store(store, data);
                 }
             }
 
