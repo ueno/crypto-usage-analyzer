@@ -89,8 +89,8 @@ pub struct SunburstChart {
 impl SunburstChart {
     pub fn new() -> Self {
         let drawing_area = gtk4::DrawingArea::new();
-        drawing_area.set_content_width(700);
-        drawing_area.set_content_height(700);
+        drawing_area.set_content_width(300);
+        drawing_area.set_content_height(300);
         drawing_area.set_vexpand(true);
         drawing_area.set_hexpand(true);
         drawing_area.set_has_tooltip(true);
