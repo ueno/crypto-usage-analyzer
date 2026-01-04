@@ -395,8 +395,8 @@ fn build_ui(app: &Application) {
             .developer_name("Crypto Auditing Project")
             .version("0.1.0")
             .comments("Visualize cryptographic operations with interactive sunburst charts")
-            .website("https://github.com/simo5/crypto-auditing")
-            .issue_url("https://github.com/simo5/crypto-auditing/issues")
+            .website("https://github.com/latchset/crypto-auditing")
+            .issue_url("https://github.com/latchset/crypto-auditing/issues")
             .license_type(gtk4::License::Gpl30)
             .build();
 
