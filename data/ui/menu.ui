@@ -6,14 +6,14 @@
         <attribute name="label" translatable="yes">Open File</attribute>
         <attribute name="action">app.open</attribute>
       </item>
-    </section>
-    <section>
       <item>
         <attribute name="label" translatable="yes">Detailed View</attribute>
         <attribute name="action">app.detailed-view</attribute>
       </item>
-    </section>
-    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
+        <attribute name="action">app.shortcuts</attribute>
+      </item>
       <item>
         <attribute name="label" translatable="yes">About Crypto Usage Analyzer</attribute>
         <attribute name="action">app.about</attribute>
