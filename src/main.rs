@@ -1,6 +1,6 @@
 mod data;
 mod models;
-mod sunburst;
+mod sunburst_chart;
 
 use adw::prelude::*;
 use adw::{glib, AboutWindow, Application, ApplicationWindow, Banner};
@@ -14,7 +14,7 @@ use models::{StatsObject, TreeNodeObject};
 use std::cell::RefCell;
 use std::fs;
 use std::rc::Rc;
-use sunburst::SunburstChart;
+use sunburst_chart::SunburstChart;
 
 const APP_ID: &str = "org.gnome.CryptoUsageAnalyzer";
 
@@ -35,6 +35,9 @@ fn main() -> glib::ExitCode {
 }
 
 fn build_ui(app: &Application) {
+    // Register custom widget types before loading UI
+    SunburstChart::ensure_type();
+
     // Load UI from resources
     let builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/window.ui");
 
@@ -51,7 +54,7 @@ fn build_ui(app: &Application) {
     let column_view: ColumnView = builder.object("column_view").expect("Failed to get column_view");
     let stats_view: ColumnView = builder.object("stats_view").expect("Failed to get stats_view");
     let event_stats_view: ColumnView = builder.object("event_stats_view").expect("Failed to get event_stats_view");
-    let chart_container: gtk4::Box = builder.object("chart_container").expect("Failed to get chart_container");
+    let chart: SunburstChart = builder.object("sunburst_chart").expect("Failed to get sunburst_chart");
     let zoom_banner: Banner = builder.object("zoom_banner").expect("Failed to get zoom_banner");
     let period_start_label: Label = builder.object("period_start_label").expect("Failed to get period_start_label");
     let period_end_label: Label = builder.object("period_end_label").expect("Failed to get period_end_label");
@@ -256,8 +259,7 @@ fn build_ui(app: &Application) {
     let percent_column = ColumnViewColumn::new(Some("%"), Some(percent_factory));
     stats_view.append_column(&percent_column);
 
-    // Create and setup sunburst chart
-    let chart = Rc::new(SunburstChart::new());
+    // Setup sunburst chart
     chart.set_zoom_banner(zoom_banner.clone());
     chart.set_tree_store(root_store.clone());
     chart.set_column_view(column_view.clone());
@@ -268,9 +270,6 @@ fn build_ui(app: &Application) {
         period_end_label.clone(),
         period_duration_label.clone(),
     );
-
-    // Add sunburst chart to the chart container
-    chart_container.append(chart.widget());
 
     // Connect tree selection to chart highlighting
     let chart_clone = chart.clone();

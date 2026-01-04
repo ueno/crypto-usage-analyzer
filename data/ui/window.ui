@@ -263,9 +263,9 @@
 					  </object>
 					</child>
 
-					<!-- Sunburst chart will be added programmatically -->
+					<!-- Sunburst chart -->
 					<child>
-					  <object class="GtkBox" id="chart_container">
+					  <object class="SunburstChart" id="sunburst_chart">
 					    <property name="vexpand">true</property>
 					    <property name="hexpand">true</property>
 					  </object>

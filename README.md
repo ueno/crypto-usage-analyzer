@@ -126,7 +126,9 @@ Or use the "Open" button to load `audit.json` from anywhere.
 ## Architecture
 
 - **data.rs**: Data structures for parsing audit events and building tree representation
-- **sunburst.rs**: Custom GTK4 widget for rendering the interactive sunburst chart using Cairo
+- **sunburst_chart/**: Custom GTK4 widget for rendering the interactive sunburst chart using Cairo
+  - **mod.rs**: Public API and GObject wrapper subclassing gtk4::DrawingArea
+  - **imp.rs**: Internal implementation with drawing logic and event handling
 - **main.rs**: Libadwaita application setup with modern GNOME patterns:
   - AdwApplicationWindow for the main window
   - AdwHeaderBar with hamburger menu
