@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <object class="AdwApplicationWindow" id="window">
+  <template class="CryptoUsageAnalyzerWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="yes">Crypto Usage Analyzer</property>
     <property name="default-width">800</property>
     <property name="default-height">600</property>
@@ -317,5 +317,5 @@
 	</child>
       </object>
     </property>
-  </object>
+  </template>
 </interface>

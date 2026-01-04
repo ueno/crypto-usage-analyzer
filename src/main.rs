@@ -1,13 +1,14 @@
 mod data;
 mod models;
 mod sunburst_chart;
+mod window;
 
 use adw::prelude::*;
-use adw::{glib, AboutWindow, Application, ApplicationWindow, Banner};
+use adw::{glib, AboutWindow, Application, Banner};
 use anyhow::Result;
 use data::{AuditEvent, TreeNode};
 use gtk4::{
-    gio, Button, ColumnView, ColumnViewColumn, Label, ListItem, SignalListItemFactory,
+    gio, subclass::prelude::*, Button, ColumnView, ColumnViewColumn, Label, ListItem, SignalListItemFactory,
     SingleSelection, Stack, TreeListModel, TreeListRow,
 };
 use models::{StatsObject, TreeNodeObject};
@@ -15,6 +16,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::rc::Rc;
 use sunburst_chart::SunburstChart;
+use window::Window;
 
 const APP_ID: &str = "org.gnome.CryptoUsageAnalyzer";
 
@@ -38,33 +40,15 @@ fn build_ui(app: &Application) {
     // Register custom widget types before loading UI
     SunburstChart::ensure_type();
 
-    // Load UI from resources
-    let builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/window.ui");
+    // Create the window
+    let window = Window::new(app);
 
     // Load menu from resources
     let menu_builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/menu.ui");
     let menu: gio::Menu = menu_builder.object("primary_menu").expect("Failed to get primary_menu");
 
-    // Get widgets from builder
-    let window: ApplicationWindow = builder.object("window").expect("Failed to get window");
-    let menu_button: gtk4::MenuButton = builder.object("menu_button").expect("Failed to get menu_button");
-    let reload_button: Button = builder.object("reload_button").expect("Failed to get reload_button");
-    let main_stack: Stack = builder.object("main_stack").expect("Failed to get main_stack");
-    let empty_button: Button = builder.object("empty_open_button").expect("Failed to get empty_open_button");
-    let column_view: ColumnView = builder.object("column_view").expect("Failed to get column_view");
-    let stats_view: ColumnView = builder.object("stats_view").expect("Failed to get stats_view");
-    let event_stats_view: ColumnView = builder.object("event_stats_view").expect("Failed to get event_stats_view");
-    let chart: SunburstChart = builder.object("sunburst_chart").expect("Failed to get sunburst_chart");
-    let zoom_banner: Banner = builder.object("zoom_banner").expect("Failed to get zoom_banner");
-    let period_start_label: Label = builder.object("period_start_label").expect("Failed to get period_start_label");
-    let period_end_label: Label = builder.object("period_end_label").expect("Failed to get period_end_label");
-    let period_duration_label: Label = builder.object("period_duration_label").expect("Failed to get period_duration_label");
-
-    // Set the application window
-    window.set_application(Some(app));
-
     // Set menu model on menu button
-    menu_button.set_menu_model(Some(&menu));
+    window.imp().menu_button.set_menu_model(Some(&menu));
 
     // Create tree list model for the tree view
     let root_store = gio::ListStore::new::<TreeNodeObject>();
@@ -82,7 +66,7 @@ fn build_ui(app: &Application) {
     );
 
     let selection_model = SingleSelection::new(Some(tree_model));
-    column_view.set_model(Some(&selection_model));
+    window.imp().column_view.set_model(Some(&selection_model));
 
     // Create "Operation" column
     let name_factory = SignalListItemFactory::new();
@@ -110,7 +94,7 @@ fn build_ui(app: &Application) {
 
     let name_column = ColumnViewColumn::new(Some("Operation"), Some(name_factory));
     name_column.set_expand(true);
-    column_view.append_column(&name_column);
+    window.imp().column_view.append_column(&name_column);
 
     // Create "Count" column
     let count_factory = SignalListItemFactory::new();
@@ -133,16 +117,16 @@ fn build_ui(app: &Application) {
     });
 
     let count_column = ColumnViewColumn::new(Some("Count"), Some(count_factory));
-    column_view.append_column(&count_column);
+    window.imp().column_view.append_column(&count_column);
 
     // Create list stores for statistics views
     let stats_store = gio::ListStore::new::<StatsObject>();
     let stats_selection = SingleSelection::new(Some(stats_store.clone()));
-    stats_view.set_model(Some(&stats_selection));
+    window.imp().stats_view.set_model(Some(&stats_selection));
 
     let event_stats_store = gio::ListStore::new::<StatsObject>();
     let event_stats_selection = SingleSelection::new(Some(event_stats_store.clone()));
-    event_stats_view.set_model(Some(&event_stats_selection));
+    window.imp().event_stats_view.set_model(Some(&event_stats_selection));
 
     // Setup columns for event statistics view (event_stats_view)
     // "Event" column for event stats
@@ -165,7 +149,7 @@ fn build_ui(app: &Application) {
     });
     let event_column = ColumnViewColumn::new(Some("Event"), Some(event_factory));
     event_column.set_expand(true);
-    event_stats_view.append_column(&event_column);
+    window.imp().event_stats_view.append_column(&event_column);
 
     // Create "Count" column for event stats
     let event_count_factory = SignalListItemFactory::new();
@@ -183,7 +167,7 @@ fn build_ui(app: &Application) {
         label.set_text(&stats_obj.count());
     });
     let event_count_column = ColumnViewColumn::new(Some("Count"), Some(event_count_factory));
-    event_stats_view.append_column(&event_count_column);
+    window.imp().event_stats_view.append_column(&event_count_column);
 
     // Create "Percentage" column for event stats
     let event_percent_factory = SignalListItemFactory::new();
@@ -201,7 +185,7 @@ fn build_ui(app: &Application) {
         label.set_text(&stats_obj.percentage());
     });
     let event_percent_column = ColumnViewColumn::new(Some("%"), Some(event_percent_factory));
-    event_stats_view.append_column(&event_percent_column);
+    window.imp().event_stats_view.append_column(&event_percent_column);
 
     // Setup columns for algorithms statistics view (stats_view)
     // "Algorithm" column
@@ -221,7 +205,7 @@ fn build_ui(app: &Application) {
     });
     let algo_column = ColumnViewColumn::new(Some("Algorithm"), Some(algo_factory));
     algo_column.set_expand(true);
-    stats_view.append_column(&algo_column);
+    window.imp().stats_view.append_column(&algo_column);
 
     // Create "Count" column
     let count_factory_stats = SignalListItemFactory::new();
@@ -239,7 +223,7 @@ fn build_ui(app: &Application) {
         label.set_text(&stats_obj.count());
     });
     let count_column_stats = ColumnViewColumn::new(Some("Count"), Some(count_factory_stats));
-    stats_view.append_column(&count_column_stats);
+    window.imp().stats_view.append_column(&count_column_stats);
 
     // Create "Percentage" column
     let percent_factory = SignalListItemFactory::new();
@@ -257,22 +241,22 @@ fn build_ui(app: &Application) {
         label.set_text(&stats_obj.percentage());
     });
     let percent_column = ColumnViewColumn::new(Some("%"), Some(percent_factory));
-    stats_view.append_column(&percent_column);
+    window.imp().stats_view.append_column(&percent_column);
 
     // Setup sunburst chart
-    chart.set_zoom_banner(zoom_banner.clone());
-    chart.set_tree_store(root_store.clone());
-    chart.set_column_view(column_view.clone());
-    chart.set_stats_store(stats_store.clone());
-    chart.set_event_stats_store(event_stats_store.clone());
-    chart.set_period_labels(
-        period_start_label.clone(),
-        period_end_label.clone(),
-        period_duration_label.clone(),
+    window.imp().sunburst_chart.set_zoom_banner(window.imp().zoom_banner.clone());
+    window.imp().sunburst_chart.set_tree_store(root_store.clone());
+    window.imp().sunburst_chart.set_column_view(window.imp().column_view.clone());
+    window.imp().sunburst_chart.set_stats_store(stats_store.clone());
+    window.imp().sunburst_chart.set_event_stats_store(event_stats_store.clone());
+    window.imp().sunburst_chart.set_period_labels(
+        window.imp().period_start_label.clone(),
+        window.imp().period_end_label.clone(),
+        window.imp().period_duration_label.clone(),
     );
 
     // Connect tree selection to chart highlighting
-    let chart_clone = chart.clone();
+    let chart_clone = window.imp().sunburst_chart.clone();
     selection_model.connect_selection_changed(move |selection, _, _| {
         if let Some(selected_item) = selection.selected_item() {
             if let Some(tree_list_row) = selected_item.downcast_ref::<TreeListRow>() {
@@ -295,17 +279,17 @@ fn build_ui(app: &Application) {
     });
 
     // Set initial page to empty state
-    main_stack.set_visible_child_name("empty");
+    window.imp().main_stack.set_visible_child_name("empty");
 
     // Track current file path for reload functionality
     let current_file_path = Rc::new(RefCell::new(Option::<String>::None));
 
     // Set up "open" action
     let window_clone = window.clone();
-    let chart_clone = chart.clone();
-    let main_stack_clone = main_stack.clone();
+    let chart_clone = window.imp().sunburst_chart.clone();
+    let main_stack_clone = window.imp().main_stack.clone();
     let current_file_path_clone = current_file_path.clone();
-    let reload_button_clone = reload_button.clone();
+    let reload_button_clone = window.imp().reload_button.clone();
 
     let open_action = gio::SimpleAction::new("open", None);
     open_action.connect_activate(move |_, _| {
@@ -357,8 +341,8 @@ fn build_ui(app: &Application) {
 
     // Set up "detailed-view" stateful action (toggle menu item)
     // Note: The action state is inverted - checked means detailed view (simple_view = false)
-    let chart_clone = chart.clone();
-    let initial_state = !chart.is_simple_view(); // Inverse: checked = detailed, unchecked = simple
+    let chart_clone = window.imp().sunburst_chart.clone();
+    let initial_state = !window.imp().sunburst_chart.is_simple_view(); // Inverse: checked = detailed, unchecked = simple
     let detailed_view_action = gio::SimpleAction::new_stateful(
         "detailed-view",
         None,
@@ -406,14 +390,14 @@ fn build_ui(app: &Application) {
 
     // Connect empty state button to open action
     let app_clone = app.clone();
-    empty_button.connect_clicked(move |_| {
+    window.imp().empty_open_button.connect_clicked(move |_| {
         app_clone.activate_action("open", None);
     });
 
     // Set up reload button action
-    let chart_reload = chart.clone();
+    let chart_reload = window.imp().sunburst_chart.clone();
     let current_file_path_reload = current_file_path.clone();
-    reload_button.connect_clicked(move |_| {
+    window.imp().reload_button.connect_clicked(move |_| {
         if let Some(path) = current_file_path_reload.borrow().as_ref() {
             let _ = load_and_display(path, &chart_reload);
         }
@@ -422,10 +406,10 @@ fn build_ui(app: &Application) {
     // Try to load default file if it exists
     let default_path = "audit.json";
     if std::path::Path::new(default_path).exists()
-        && load_and_display(default_path, &chart).is_ok() {
-            main_stack.set_visible_child_name("content");
+        && load_and_display(default_path, &window.imp().sunburst_chart).is_ok() {
+            window.imp().main_stack.set_visible_child_name("content");
             *current_file_path.borrow_mut() = Some(default_path.to_string());
-            reload_button.set_sensitive(true);
+            window.imp().reload_button.set_sensitive(true);
         }
 
     window.present();
