@@ -5,6 +5,7 @@ use anyhow::Result;
 use gtk4::{gio, glib, prelude::*, subclass::prelude::*};
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -24,14 +25,20 @@ impl Window {
     }
 
     pub fn reload(&self) -> Result<()> {
-        if let Some(ref path) = *self.imp().path.borrow() {
-            let content = fs::read_to_string(path)?;
-            let events: Vec<AuditEvent> = serde_json::from_str(&content)?;
+        let events: Vec<AuditEvent> =
+            if let Ok(content) = Command::new("crau-query").output() {
+                serde_json::from_slice(&content.stdout)?
+            } else if let Some(ref path) = *self.imp().path.borrow() {
+                let content = fs::read_to_string(path)?;
+                serde_json::from_str(&content)?
+            } else {
+                return Ok(())
+            };
 
-            let tree = TreeNode::from_events(&events);
-            self.imp().sunburst_chart.set_data(tree, events);
-            self.imp().main_stack.set_visible_child_name("content");
-        }
+        let tree = TreeNode::from_events(&events);
+        self.imp().sunburst_chart.set_data(tree, events);
+        self.imp().main_stack.set_visible_child_name("content");
+
         Ok(())
     }
 
