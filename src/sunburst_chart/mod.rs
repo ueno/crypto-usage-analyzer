@@ -197,6 +197,8 @@ impl SunburstChart {
             move |_| {
                 let imp = chart.imp();
                 *imp.zoom_node.borrow_mut() = None;
+                // Clear hover state when resetting zoom
+                *imp.hover_segment.borrow_mut() = None;
 
                 if let Some(banner) = imp.banner.borrow().as_ref() {
                     banner.set_revealed(false);
@@ -270,7 +272,10 @@ impl SunburstChart {
 
         // Draw child captions if hovering over a segment
         if let Some(hover_idx) = *imp.hover_segment.borrow() {
-            imp::SunburstChart::draw_child_captions(cr, &new_segments, hover_idx, cx, cy);
+            // Bounds check to prevent panic if hover index is stale
+            if hover_idx < new_segments.len() {
+                imp::SunburstChart::draw_child_captions(cr, &new_segments, hover_idx, cx, cy);
+            }
         }
     }
 
@@ -322,6 +327,8 @@ impl SunburstChart {
                 if seg.depth == 0 {
                     // Reset zoom on root click
                     *imp.zoom_node.borrow_mut() = None;
+                    // Clear hover state when resetting zoom
+                    *imp.hover_segment.borrow_mut() = None;
                     // Hide banner
                     if let Some(banner) = imp.banner.borrow().as_ref() {
                         banner.set_revealed(false);
@@ -346,6 +353,8 @@ impl SunburstChart {
                 } else {
                     // Zoom into this segment
                     *imp.zoom_node.borrow_mut() = Some(seg.node.clone());
+                    // Clear hover state when zooming since segments will be regenerated
+                    *imp.hover_segment.borrow_mut() = None;
                     // Show banner
                     if let Some(banner) = imp.banner.borrow().as_ref() {
                         banner.set_revealed(true);
