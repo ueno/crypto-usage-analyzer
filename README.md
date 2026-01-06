@@ -2,6 +2,12 @@
 
 A native GNOME application for visualizing crypto-auditing data with an interactive sunburst chart, inspired by Baobab's disk usage visualization. Built with modern libadwaita design principles.
 
+## Screenshots
+
+<div align="center">
+    <img src="./data/screenshots/screenshot1.png" />
+</div>
+
 ## Features
 
 - **Interactive Sunburst Chart**: Visualize cryptographic operations in a hierarchical circular diagram
