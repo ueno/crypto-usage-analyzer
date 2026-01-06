@@ -159,8 +159,14 @@ impl SunburstChart {
 
             let start_time: jiff::Timestamp = start_time.try_into().unwrap();
             let end_time: jiff::Timestamp = end_time.try_into().unwrap();
-            let start_text = format!("Start: {}", start_time.strftime("%c"));
-            let end_text = format!("End: {}", end_time.strftime("%c"));
+
+            // Convert to local timezone
+            let tz = jiff::tz::TimeZone::system();
+            let start_local = start_time.to_zoned(tz.clone());
+            let end_local = end_time.to_zoned(tz);
+
+            let start_text = format!("Start: {}", start_local.strftime("%c"));
+            let end_text = format!("End: {}", end_local.strftime("%c"));
 
             // Calculate duration
             let duration = end_time.duration_since(start_time);
