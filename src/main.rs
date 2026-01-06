@@ -37,15 +37,6 @@ fn build_ui(app: &Application) {
     // Create the window
     let window = Window::new(app);
 
-    // Load menu from resources
-    let menu_builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/menu.ui");
-    let menu: gio::Menu = menu_builder
-        .object("primary_menu")
-        .expect("Failed to get primary_menu");
-
-    // Set menu model on menu button
-    window.imp().menu_button.set_menu_model(Some(&menu));
-
     // Create tree list model for the tree view
     let root_store = gio::ListStore::new::<TreeNodeObject>();
 

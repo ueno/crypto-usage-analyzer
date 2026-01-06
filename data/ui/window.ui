@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
+  <menu id="primary_menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Open File</attribute>
+        <attribute name="action">app.open</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Detailed View</attribute>
+        <attribute name="action">app.detailed-view</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
+        <attribute name="action">app.shortcuts</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">About Crypto Usage Analyzer</attribute>
+        <attribute name="action">app.about</attribute>
+      </item>
+    </section>
+  </menu>
   <template class="CryptoUsageAnalyzerWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="yes">Crypto Usage Analyzer</property>
     <property name="default-width">800</property>
@@ -57,6 +77,7 @@
 			  <object class="AdwHeaderBar" id="header_bar">
 			    <child type="end">
 			      <object class="GtkMenuButton" id="menu_button">
+				<property name="menu_model">primary_menu</property>
 				<property name="icon-name">open-menu-symbolic</property>
 				<property name="primary">true</property>
 			      </object>
