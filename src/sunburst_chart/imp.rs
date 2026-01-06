@@ -242,14 +242,16 @@ impl SunburstChart {
 
     pub fn get_color(name: &str, depth: usize) -> (f64, f64, f64) {
         // Simple hash-based color generation
-        let mut hash: u32 = depth as u32 * 100;
+        // Use only the name for hashing to ensure consistent colors when zooming
+        let mut hash: u32 = 0;
         for byte in name.bytes() {
             hash = hash.wrapping_mul(31).wrapping_add(byte as u32);
         }
 
         let hue = (hash % 360) as f64 / 360.0;
         let saturation = 0.6 + ((hash / 360) % 20) as f64 / 100.0;
-        let value = 0.7 + ((hash / 7200) % 20) as f64 / 100.0;
+        // Use depth for value variation to distinguish between rings visually
+        let value = 0.5 + (depth as f64 * 0.08).min(0.4);
 
         // Convert HSV to RGB
         let h = hue * 6.0;
