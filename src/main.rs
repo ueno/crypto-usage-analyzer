@@ -211,9 +211,10 @@ fn build_ui(app: &Application) {
     app.add_action(&about_action);
 
     // Connect empty state button to open action
-    let app_clone = app.clone();
-    window.imp().empty_open_button.connect_clicked(move |_| {
-        app_clone.activate_action("open", None);
+    window.imp().empty_open_button.connect_clicked(move |button| {
+        button
+            .activate_action("app.open", None)
+            .expect("action should exist");
     });
 
     // Set up reload button action
