@@ -203,7 +203,7 @@
 						  <class name="data-table"/>
 						</style>
 						<property name="model">
-						  <object class="GtkSingleSelection" id="event_stats_selection">
+						  <object class="GtkNoSelection" id="event_stats_selection">
                                                     <property name="model">
                                                       <object class="GListStore" id="event_stats_store">
 							<property name="item-type">StatsObject</property>
@@ -290,7 +290,7 @@
 						  <class name="data-table"/>
 						</style>
 						<property name="model">
-						  <object class="GtkSingleSelection" id="stats_selection">
+						  <object class="GtkNoSelection" id="stats_selection">
                                                     <property name="model">
                                                       <object class="GListStore" id="stats_store">
 							<property name="item-type">StatsObject</property>
