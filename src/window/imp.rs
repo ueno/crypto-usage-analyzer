@@ -2,16 +2,19 @@ use crate::models::{StatsObject, TreeNodeObject};
 use crate::sunburst_chart::SunburstChart;
 use adw::subclass::prelude::*;
 use gtk4::{
-    gio, glib, prelude::*, CompositeTemplate, Label, ListItem, SignalListItemFactory, TreeListRow,
+    gio, glib, prelude::*, Button, CompositeTemplate, Label, ListItem, SignalListItemFactory,
+    SingleSelection, TreeListModel, TreeListRow,
 };
+use std::cell::RefCell;
+use std::path::PathBuf;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(resource = "/org/gnome/CryptoUsageAnalyzer/ui/window.ui")]
 pub struct Window {
     #[template_child]
-    pub main_stack: TemplateChild<gtk4::Stack>,
+    pub toast_overlay: TemplateChild<adw::ToastOverlay>,
     #[template_child]
-    pub empty_open_button: TemplateChild<gtk4::Button>,
+    pub main_stack: TemplateChild<gtk4::Stack>,
     #[template_child]
     pub menu_button: TemplateChild<gtk4::MenuButton>,
     #[template_child]
@@ -36,6 +39,9 @@ pub struct Window {
     pub period_end_label: TemplateChild<gtk4::Label>,
     #[template_child]
     pub period_duration_label: TemplateChild<gtk4::Label>,
+
+    // Current file path
+    pub path: RefCell<Option<PathBuf>>,
 }
 
 #[glib::object_subclass]
@@ -160,9 +166,81 @@ impl Window {
         let label = list_item.child().and_downcast::<Label>().unwrap();
         label.set_text(&stats_obj.percentage());
     }
+
+    #[template_callback]
+    fn open_button_clicked(button: &Button) {
+        button
+            .activate_action("app.open", None)
+            .expect("action should exist");
+    }
+
+    #[template_callback]
+    fn reload_button_clicked(button: &Button) {
+        button
+            .activate_action("app.reload", None)
+            .expect("action should exist");
+    }
 }
 
-impl ObjectImpl for Window {}
+impl ObjectImpl for Window {
+    fn constructed(&self) {
+        self.parent_constructed();
+
+        // Create tree list model for the tree view
+        let root_store = gio::ListStore::new::<TreeNodeObject>();
+
+        let tree_model = TreeListModel::new(
+            root_store.clone(),
+            false, // passthrough
+            true,  // autoexpand
+            |item| {
+                let tree_node = item.downcast_ref::<TreeNodeObject>().unwrap();
+                tree_node.children().map(gio::ListModel::from)
+            },
+        );
+
+        let selection_model = SingleSelection::new(Some(tree_model));
+        self.tree_view.set_model(Some(&selection_model));
+
+        // Setup sunburst chart
+        self.sunburst_chart
+            .set_zoom_banner(self.zoom_banner.clone());
+        self.sunburst_chart.set_tree_store(root_store.clone());
+        self.sunburst_chart.set_column_view(self.tree_view.clone());
+        self.sunburst_chart
+            .set_stats_store(self.stats_store.clone());
+        self.sunburst_chart
+            .set_event_stats_store(self.event_stats_store.clone());
+        self.sunburst_chart.set_period_labels(
+            self.period_start_label.clone(),
+            self.period_end_label.clone(),
+            self.period_duration_label.clone(),
+        );
+
+        // Connect tree selection to chart highlighting
+        let chart_clone = self.sunburst_chart.clone();
+        selection_model.connect_selection_changed(move |selection, _, _| {
+            if let Some(selected_item) = selection.selected_item() {
+                if let Some(tree_list_row) = selected_item.downcast_ref::<TreeListRow>() {
+                    // Build path from root to selected node
+                    let mut path = Vec::new();
+                    let mut current_row = Some(tree_list_row.clone());
+
+                    while let Some(row) = current_row {
+                        if let Some(node) = row.item().and_downcast::<TreeNodeObject>() {
+                            path.insert(0, node.name());
+                        }
+                        current_row = row.parent();
+                    }
+
+                    chart_clone.set_selected_path(path);
+                }
+            } else {
+                chart_clone.set_selected_path(Vec::new());
+            }
+        });
+    }
+}
 
 impl WidgetImpl for Window {}
 

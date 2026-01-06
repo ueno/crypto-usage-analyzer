@@ -1,7 +1,10 @@
 mod imp;
 
-use gtk4::gio;
-use gtk4::glib;
+use crate::data::{AuditEvent, TreeNode};
+use anyhow::Result;
+use gtk4::{gio, glib, prelude::*, subclass::prelude::*};
+use std::fs;
+use std::path::Path;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -13,5 +16,26 @@ glib::wrapper! {
 impl Window {
     pub fn new(app: &adw::Application) -> Self {
         glib::Object::builder().property("application", app).build()
+    }
+
+    pub fn set_path(&self, path: impl AsRef<Path>) {
+        *self.imp().path.borrow_mut() = Some(path.as_ref().to_path_buf());
+        self.imp().reload_button.set_sensitive(true);
+    }
+
+    pub fn reload(&self) -> Result<()> {
+        if let Some(ref path) = *self.imp().path.borrow() {
+            let content = fs::read_to_string(path)?;
+            let events: Vec<AuditEvent> = serde_json::from_str(&content)?;
+
+            let tree = TreeNode::from_events(&events);
+            self.imp().sunburst_chart.set_data(tree, events);
+            self.imp().main_stack.set_visible_child_name("content");
+        }
+        Ok(())
+    }
+
+    pub fn show_toast(&self, message: &str) {
+        self.imp().toast_overlay.add_toast(adw::Toast::new(message));
     }
 }
