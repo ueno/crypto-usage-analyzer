@@ -260,7 +260,20 @@ impl SunburstChart {
             &Vec::new(),
         );
 
-        *imp.segments.borrow_mut() = new_segments;
+        *imp.segments.borrow_mut() = new_segments.clone();
+
+        // Draw child captions if hovering over a segment
+        if let Some(hover_idx) = *imp.hover_segment.borrow() {
+            imp::SunburstChart::draw_child_captions(
+                cr,
+                &new_segments,
+                hover_idx,
+                cx,
+                cy,
+                width as f64,
+                height as f64,
+            );
+        }
     }
 
     pub(crate) fn handle_motion(&self, x: f64, y: f64) {

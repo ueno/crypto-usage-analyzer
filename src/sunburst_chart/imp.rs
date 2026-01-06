@@ -38,29 +38,7 @@ impl Segment {
     }
 
     pub fn format_tooltip(&self) -> String {
-        let total = self.node.value;
-        let children_count = self.node.children.len();
-
-        let mut tooltip = format!("{}\n", self.node.name);
-        tooltip.push_str(&format!("Count: {}\n", total));
-
-        if children_count > 0 {
-            tooltip.push_str(&format!("Children: {}\n", children_count));
-
-            // Show top 5 children by value
-            let mut sorted_children = self.node.children.clone();
-            sorted_children.sort_by(|a, b| b.value.cmp(&a.value));
-
-            if !sorted_children.is_empty() {
-                tooltip.push_str("\nTop operations:\n");
-                for child in sorted_children.iter().take(5) {
-                    let percentage = (child.value as f64 / total as f64 * 100.0).round() as u32;
-                    tooltip.push_str(&format!("  • {} ({}%)\n", child.name, percentage));
-                }
-            }
-        }
-
-        tooltip
+        self.node.name.to_string()
     }
 }
 
@@ -375,6 +353,96 @@ impl SunburstChart {
                 &format!("{:.1}%", percentage),
             );
             store.append(&stats_obj);
+        }
+    }
+
+    pub fn draw_child_captions(
+        cr: &Context,
+        segments: &[Segment],
+        hover_idx: usize,
+        cx: f64,
+        cy: f64,
+        width: f64,
+        height: f64,
+    ) {
+        let hovered_segment = &segments[hover_idx];
+        let hovered_depth = hovered_segment.depth;
+
+        // Collect direct children of the hovered segment
+        let mut child_segments: Vec<&Segment> = Vec::new();
+        for seg in segments.iter() {
+            if seg.depth == hovered_depth + 1 {
+                // Check if this segment is within the hovered segment's angle range
+                if seg.start_angle >= hovered_segment.start_angle
+                    && seg.end_angle <= hovered_segment.end_angle
+                {
+                    child_segments.push(seg);
+                }
+            }
+        }
+
+        if child_segments.is_empty() {
+            return;
+        }
+
+        // Draw captions for each child
+        for child_seg in child_segments {
+            let middle_angle = (child_seg.start_angle + child_seg.end_angle) / 2.0;
+            let middle_radius = (child_seg.inner_radius + child_seg.outer_radius) / 2.0;
+
+            // Calculate the center point of the segment
+            let seg_center_x = cx + middle_radius * middle_angle.cos();
+            let seg_center_y = cy + middle_radius * middle_angle.sin();
+
+            // Calculate label position - extend outward from the segment
+            let label_distance = child_seg.outer_radius + 30.0;
+            let label_x = cx + label_distance * middle_angle.cos();
+            let label_y = cy + label_distance * middle_angle.sin();
+
+            // Draw line from segment center to label position
+            cr.save().unwrap();
+            cr.set_source_rgba(0.0, 0.0, 0.0, 0.8);
+            cr.set_line_width(1.0);
+            cr.move_to(seg_center_x, seg_center_y);
+            cr.line_to(label_x, label_y);
+            cr.stroke().unwrap();
+
+            // Draw small circle at segment center
+            cr.arc(seg_center_x, seg_center_y, 2.0, 0.0, 2.0 * PI);
+            cr.fill().unwrap();
+
+            // Draw label text
+            cr.select_font_face("Sans", cairo::FontSlant::Normal, cairo::FontWeight::Normal);
+            cr.set_font_size(10.0);
+
+            let text = &child_seg.node.name;
+            let text_extents = cr.text_extents(text).unwrap();
+
+            // Position text based on which quadrant the label is in
+            let text_x = if label_x > cx {
+                label_x + 5.0
+            } else {
+                label_x - text_extents.width() - 5.0
+            };
+            let text_y = label_y + text_extents.height() / 2.0;
+
+            // Draw text background
+            let padding = 2.0;
+            cr.set_source_rgba(1.0, 1.0, 1.0, 0.9);
+            cr.rectangle(
+                text_x - padding,
+                text_y - text_extents.height() - padding,
+                text_extents.width() + 2.0 * padding,
+                text_extents.height() + 2.0 * padding,
+            );
+            cr.fill().unwrap();
+
+            // Draw text
+            cr.set_source_rgb(0.0, 0.0, 0.0);
+            cr.move_to(text_x, text_y);
+            cr.show_text(text).unwrap();
+
+            cr.restore().unwrap();
         }
     }
 }
