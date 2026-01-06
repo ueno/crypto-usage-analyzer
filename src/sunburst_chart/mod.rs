@@ -270,8 +270,6 @@ impl SunburstChart {
                 hover_idx,
                 cx,
                 cy,
-                width as f64,
-                height as f64,
             );
         }
     }

@@ -362,8 +362,6 @@ impl SunburstChart {
         hover_idx: usize,
         cx: f64,
         cy: f64,
-        width: f64,
-        height: f64,
     ) {
         let hovered_segment = &segments[hover_idx];
         let hovered_depth = hovered_segment.depth;
