@@ -7,7 +7,6 @@ use adw::prelude::*;
 use adw::{glib, AboutWindow, Application};
 use gtk4::{gio, subclass::prelude::*};
 use window::Window;
-use std::process::Command;
 
 const APP_ID: &str = "org.gnome.CryptoUsageAnalyzer";
 
@@ -127,7 +126,7 @@ fn build_ui(app: &Application) {
     });
     app.add_action(&reload_action);
 
-    if let Ok(_) = Command::new("crau-query").args(["--version"]).status() {
+    if window.check_crau_query() {
         if let Err(e) = window.reload() {
             window.show_toast(&e.to_string());
         }

@@ -24,6 +24,14 @@ impl Window {
         self.imp().reload_button.set_sensitive(true);
     }
 
+    pub fn check_crau_query(&self) -> bool {
+        if Command::new("crau-query").args(["--version"]).status().is_ok() {
+            self.imp().reload_button.set_sensitive(true);
+            return true;
+        }
+        false
+    }
+
     pub fn reload(&self) -> Result<()> {
         let events: Vec<AuditEvent> =
             if let Ok(content) = Command::new("crau-query").output() {
