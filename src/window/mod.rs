@@ -25,7 +25,11 @@ impl Window {
     }
 
     pub fn check_crau_query(&self) -> bool {
-        if Command::new("crau-query").args(["--version"]).status().is_ok() {
+        if Command::new("crau-query")
+            .args(["--version"])
+            .status()
+            .is_ok()
+        {
             self.imp().reload_button.set_sensitive(true);
             return true;
         }
@@ -33,15 +37,14 @@ impl Window {
     }
 
     pub fn reload(&self) -> Result<()> {
-        let events: Vec<AuditEvent> =
-            if let Ok(content) = Command::new("crau-query").output() {
-                serde_json::from_slice(&content.stdout)?
-            } else if let Some(ref path) = *self.imp().path.borrow() {
-                let content = fs::read_to_string(path)?;
-                serde_json::from_str(&content)?
-            } else {
-                return Ok(())
-            };
+        let events: Vec<AuditEvent> = if let Ok(content) = Command::new("crau-query").output() {
+            serde_json::from_slice(&content.stdout)?
+        } else if let Some(ref path) = *self.imp().path.borrow() {
+            let content = fs::read_to_string(path)?;
+            serde_json::from_str(&content)?
+        } else {
+            return Ok(());
+        };
 
         let tree = TreeNode::from_events(&events);
         self.imp().sunburst_chart.set_data(tree, events);

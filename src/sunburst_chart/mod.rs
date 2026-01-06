@@ -270,13 +270,7 @@ impl SunburstChart {
 
         // Draw child captions if hovering over a segment
         if let Some(hover_idx) = *imp.hover_segment.borrow() {
-            imp::SunburstChart::draw_child_captions(
-                cr,
-                &new_segments,
-                hover_idx,
-                cx,
-                cy,
-            );
+            imp::SunburstChart::draw_child_captions(cr, &new_segments, hover_idx, cx, cy);
         }
     }
 
