@@ -168,6 +168,49 @@
                                             <style>
                                               <class name="data-table"/>
                                             </style>
+                                            <property name="model">
+                                              <object class="GtkSingleSelection" id="event_stats_selection">
+                                                <property name="model">
+                                                  <object class="GListStore" id="event_stats_store">
+						    <property name="item-type">StatsObject</property>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </property>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="event_name_column">
+                                                <property name="title" translatable="yes">Event</property>
+                                                <property name="expand">True</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="name_column_setup"/>
+                                                    <signal name="bind" handler="name_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="event_count_column">
+                                                <property name="title" translatable="yes">Count</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="count_column_setup"/>
+                                                    <signal name="bind" handler="count_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="event_percentage_column">
+                                                <property name="title" translatable="yes">%</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="percentage_column_setup"/>
+                                                    <signal name="bind" handler="percentage_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
 					  </object>
 					</property>
                                       </object>
@@ -212,6 +255,49 @@
                                             <style>
                                               <class name="data-table"/>
                                             </style>
+                                            <property name="model">
+                                              <object class="GtkSingleSelection" id="stats_selection">
+                                                <property name="model">
+                                                  <object class="GListStore" id="stats_store">
+						    <property name="item-type">StatsObject</property>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </property>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="alg_name_column">
+                                                <property name="title" translatable="yes">Event</property>
+                                                <property name="expand">True</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="name_column_setup"/>
+                                                    <signal name="bind" handler="name_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="alg_count_column">
+                                                <property name="title" translatable="yes">Count</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="count_column_setup"/>
+                                                    <signal name="bind" handler="count_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="alg_percentage_column">
+                                                <property name="title" translatable="yes">%</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="percentage_column_setup"/>
+                                                    <signal name="bind" handler="percentage_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
 					  </object>
 					</property>
                                       </object>
@@ -285,10 +371,33 @@
 				      <object class="GtkScrolledWindow" id="tree_scroll">
 					<property name="min-content-width">300</property>
 					<property name="child">
-					  <object class="GtkColumnView" id="column_view">
+					  <object class="GtkColumnView" id="tree_view">
 					    <style>
 					      <class name="data-table"/>
 					    </style>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="tree_name_column">
+                                                <property name="title" translatable="yes">Event</property>
+                                                <property name="expand">True</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="tree_name_column_setup"/>
+                                                    <signal name="bind" handler="tree_name_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
+                                            <child>
+                                              <object class="GtkColumnViewColumn" id="tree_count_column">
+                                                <property name="title" translatable="yes">Count</property>
+                                                <property name="factory">
+                                                  <object class="GtkSignalListItemFactory">
+                                                    <signal name="setup" handler="tree_count_column_setup"/>
+                                                    <signal name="bind" handler="tree_count_column_bind"/>
+                                                  </object>
+                                                </property>
+                                              </object>
+                                            </child>
 					  </object>
 					</property>
 				      </object>

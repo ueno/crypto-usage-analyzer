@@ -4,14 +4,11 @@ mod sunburst_chart;
 mod window;
 
 use adw::prelude::*;
-use adw::{glib, AboutWindow, Application, Banner};
+use adw::{glib, AboutWindow, Application};
 use anyhow::Result;
 use data::{AuditEvent, TreeNode};
-use gtk4::{
-    gio, subclass::prelude::*, Button, ColumnView, ColumnViewColumn, Label, ListItem, SignalListItemFactory,
-    SingleSelection, Stack, TreeListModel, TreeListRow,
-};
-use models::{StatsObject, TreeNodeObject};
+use gtk4::{gio, subclass::prelude::*, SingleSelection, TreeListModel, TreeListRow};
+use models::TreeNodeObject;
 use std::cell::RefCell;
 use std::fs;
 use std::rc::Rc;
@@ -42,7 +39,9 @@ fn build_ui(app: &Application) {
 
     // Load menu from resources
     let menu_builder = gtk4::Builder::from_resource("/org/gnome/CryptoUsageAnalyzer/ui/menu.ui");
-    let menu: gio::Menu = menu_builder.object("primary_menu").expect("Failed to get primary_menu");
+    let menu: gio::Menu = menu_builder
+        .object("primary_menu")
+        .expect("Failed to get primary_menu");
 
     // Set menu model on menu button
     window.imp().menu_button.set_menu_model(Some(&menu));
@@ -56,196 +55,34 @@ fn build_ui(app: &Application) {
         true,  // autoexpand
         |item| {
             let tree_node = item.downcast_ref::<TreeNodeObject>().unwrap();
-            tree_node
-                .children()
-                .map(gio::ListModel::from)
+            tree_node.children().map(gio::ListModel::from)
         },
     );
 
     let selection_model = SingleSelection::new(Some(tree_model));
-    window.imp().column_view.set_model(Some(&selection_model));
-
-    // Create "Operation" column
-    let name_factory = SignalListItemFactory::new();
-    name_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::Start);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    name_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let tree_list_row = list_item.item().and_downcast::<TreeListRow>().unwrap();
-        let tree_node = tree_list_row
-            .item()
-            .and_downcast::<TreeNodeObject>()
-            .unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-
-        // Add indentation based on depth
-        let depth = tree_list_row.depth();
-        let indent = "  ".repeat(depth as usize);
-        label.set_text(&format!("{}{}", indent, tree_node.name()));
-    });
-
-    let name_column = ColumnViewColumn::new(Some("Operation"), Some(name_factory));
-    name_column.set_expand(true);
-    window.imp().column_view.append_column(&name_column);
-
-    // Create "Count" column
-    let count_factory = SignalListItemFactory::new();
-    count_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::End);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    count_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let tree_list_row = list_item.item().and_downcast::<TreeListRow>().unwrap();
-        let tree_node = tree_list_row
-            .item()
-            .and_downcast::<TreeNodeObject>()
-            .unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&tree_node.count());
-    });
-
-    let count_column = ColumnViewColumn::new(Some("Count"), Some(count_factory));
-    window.imp().column_view.append_column(&count_column);
-
-    // Create list stores for statistics views
-    let stats_store = gio::ListStore::new::<StatsObject>();
-    let stats_selection = SingleSelection::new(Some(stats_store.clone()));
-    window.imp().stats_view.set_model(Some(&stats_selection));
-
-    let event_stats_store = gio::ListStore::new::<StatsObject>();
-    let event_stats_selection = SingleSelection::new(Some(event_stats_store.clone()));
-    window.imp().event_stats_view.set_model(Some(&event_stats_selection));
-
-    // Setup columns for event statistics view (event_stats_view)
-    // "Event" column for event stats
-    let event_factory = SignalListItemFactory::new();
-    event_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::Start);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        label.set_wrap(true);
-        label.set_wrap_mode(gtk4::pango::WrapMode::WordChar);
-        label.set_max_width_chars(30);
-        list_item.set_child(Some(&label));
-    });
-    event_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.algorithm());
-    });
-    let event_column = ColumnViewColumn::new(Some("Event"), Some(event_factory));
-    event_column.set_expand(true);
-    window.imp().event_stats_view.append_column(&event_column);
-
-    // Create "Count" column for event stats
-    let event_count_factory = SignalListItemFactory::new();
-    event_count_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::End);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    event_count_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.count());
-    });
-    let event_count_column = ColumnViewColumn::new(Some("Count"), Some(event_count_factory));
-    window.imp().event_stats_view.append_column(&event_count_column);
-
-    // Create "Percentage" column for event stats
-    let event_percent_factory = SignalListItemFactory::new();
-    event_percent_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::End);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    event_percent_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.percentage());
-    });
-    let event_percent_column = ColumnViewColumn::new(Some("%"), Some(event_percent_factory));
-    window.imp().event_stats_view.append_column(&event_percent_column);
-
-    // Setup columns for algorithms statistics view (stats_view)
-    // "Algorithm" column
-    let algo_factory = SignalListItemFactory::new();
-    algo_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::Start);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    algo_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.algorithm());
-    });
-    let algo_column = ColumnViewColumn::new(Some("Algorithm"), Some(algo_factory));
-    algo_column.set_expand(true);
-    window.imp().stats_view.append_column(&algo_column);
-
-    // Create "Count" column
-    let count_factory_stats = SignalListItemFactory::new();
-    count_factory_stats.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::End);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    count_factory_stats.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.count());
-    });
-    let count_column_stats = ColumnViewColumn::new(Some("Count"), Some(count_factory_stats));
-    window.imp().stats_view.append_column(&count_column_stats);
-
-    // Create "Percentage" column
-    let percent_factory = SignalListItemFactory::new();
-    percent_factory.connect_setup(|_, list_item| {
-        let label = Label::new(None);
-        label.set_halign(gtk4::Align::End);
-        label.set_margin_start(4);
-        label.set_margin_end(4);
-        list_item.set_child(Some(&label));
-    });
-    percent_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<ListItem>().unwrap();
-        let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
-        let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.percentage());
-    });
-    let percent_column = ColumnViewColumn::new(Some("%"), Some(percent_factory));
-    window.imp().stats_view.append_column(&percent_column);
+    window.imp().tree_view.set_model(Some(&selection_model));
 
     // Setup sunburst chart
-    window.imp().sunburst_chart.set_zoom_banner(window.imp().zoom_banner.clone());
-    window.imp().sunburst_chart.set_tree_store(root_store.clone());
-    window.imp().sunburst_chart.set_column_view(window.imp().column_view.clone());
-    window.imp().sunburst_chart.set_stats_store(stats_store.clone());
-    window.imp().sunburst_chart.set_event_stats_store(event_stats_store.clone());
+    window
+        .imp()
+        .sunburst_chart
+        .set_zoom_banner(window.imp().zoom_banner.clone());
+    window
+        .imp()
+        .sunburst_chart
+        .set_tree_store(root_store.clone());
+    window
+        .imp()
+        .sunburst_chart
+        .set_column_view(window.imp().tree_view.clone());
+    window
+        .imp()
+        .sunburst_chart
+        .set_stats_store(window.imp().stats_store.clone());
+    window
+        .imp()
+        .sunburst_chart
+        .set_event_stats_store(window.imp().event_stats_store.clone());
     window.imp().sunburst_chart.set_period_labels(
         window.imp().period_start_label.clone(),
         window.imp().period_end_label.clone(),
@@ -340,11 +177,8 @@ fn build_ui(app: &Application) {
     // Note: The action state is inverted - checked means detailed view (simple_view = false)
     let chart_clone = window.imp().sunburst_chart.clone();
     let initial_state = !window.imp().sunburst_chart.is_simple_view(); // Inverse: checked = detailed, unchecked = simple
-    let detailed_view_action = gio::SimpleAction::new_stateful(
-        "detailed-view",
-        None,
-        &initial_state.to_variant(),
-    );
+    let detailed_view_action =
+        gio::SimpleAction::new_stateful("detailed-view", None, &initial_state.to_variant());
 
     detailed_view_action.connect_change_state({
         let chart = chart_clone.clone();
@@ -403,11 +237,12 @@ fn build_ui(app: &Application) {
     // Try to load default file if it exists
     let default_path = "audit.json";
     if std::path::Path::new(default_path).exists()
-        && load_and_display(default_path, &window.imp().sunburst_chart).is_ok() {
-            window.imp().main_stack.set_visible_child_name("content");
-            *current_file_path.borrow_mut() = Some(default_path.to_string());
-            window.imp().reload_button.set_sensitive(true);
-        }
+        && load_and_display(default_path, &window.imp().sunburst_chart).is_ok()
+    {
+        window.imp().main_stack.set_visible_child_name("content");
+        *current_file_path.borrow_mut() = Some(default_path.to_string());
+        window.imp().reload_button.set_sensitive(true);
+    }
 
     window.present();
 }

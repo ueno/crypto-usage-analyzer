@@ -285,7 +285,7 @@ impl TreeNode {
     /// Merge nodes with the same labels, working from outermost layer inward
     fn merge_by_labels(&self) -> Self {
         // First, recursively process children (bottom-up approach)
-        let mut processed_children: Vec<TreeNode> = self
+        let processed_children: Vec<TreeNode> = self
             .children
             .iter()
             .map(|child| child.merge_by_labels())

@@ -1,6 +1,5 @@
 mod imp;
 
-use adw::subclass::prelude::*;
 use gtk4::gio;
 use gtk4::glib;
 
