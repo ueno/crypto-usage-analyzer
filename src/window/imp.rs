@@ -1,5 +1,6 @@
 use adw::subclass::prelude::*;
 use gtk4::{glib, prelude::*, CompositeTemplate};
+use crate::sunburst_chart::SunburstChart;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(resource = "/org/gnome/CryptoUsageAnalyzer/ui/window.ui")]
@@ -37,6 +38,9 @@ impl ObjectSubclass for Window {
     type ParentType = adw::ApplicationWindow;
 
     fn class_init(klass: &mut Self::Class) {
+        // Register custom widget types before loading UI
+        SunburstChart::ensure_type();
+
         klass.bind_template();
     }
 

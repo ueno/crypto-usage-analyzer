@@ -37,9 +37,6 @@ fn main() -> glib::ExitCode {
 }
 
 fn build_ui(app: &Application) {
-    // Register custom widget types before loading UI
-    SunburstChart::ensure_type();
-
     // Create the window
     let window = Window::new(app);
 

@@ -27,13 +27,6 @@ impl SunburstChart {
         glib::Object::new()
     }
 
-    /// Ensure the type is registered with the GObject type system.
-    /// This must be called before using the widget in UI files.
-    pub fn ensure_type() {
-        use glib::prelude::StaticType;
-        let _ = Self::static_type();
-    }
-
     pub fn set_data(&self, data: TreeNode, events: Vec<AuditEvent>) {
         let imp = self.imp();
 
