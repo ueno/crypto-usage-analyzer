@@ -30,7 +30,7 @@ You need GTK4 and libadwaita development libraries installed:
 sudo dnf install gtk4-devel libadwaita-devel cairo-devel meson
 ```
 
-**Ubuntu/Debian:**
+**Debian/Ubuntu:**
 ```bash
 sudo apt install libgtk-4-dev libadwaita-1-dev libcairo2-dev meson
 ```
@@ -40,15 +40,7 @@ sudo apt install libgtk-4-dev libadwaita-1-dev libcairo2-dev meson
 sudo pacman -S gtk4 libadwaita cairo meson
 ```
 
-### Build with Cargo
-
-```bash
-cd crypto-usage-analyzer
-cargo build --release
-cargo run --release
-```
-
-### Build with Meson (Recommended for System Installation)
+### Build with Meson
 
 ```bash
 cd crypto-usage-analyzer
@@ -111,16 +103,6 @@ The application expects JSON data in the crypto-auditing event format:
 ]
 ```
 
-## Example
-
-To test with the provided sample data:
-
-```bash
-# From the workspace root
-cd crypto-usage-analyzer
-cargo run --release -- ../audit.json
-```
-
 Or use the "Open" button to load `audit.json` from anywhere.
 
 ## Architecture
@@ -148,4 +130,4 @@ Colors are generated based on a hash of the operation name and depth, ensuring c
 
 ## License
 
-This is a prototype application for visualizing crypto-auditing data.
+GPL3-or-later
