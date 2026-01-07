@@ -58,4 +58,10 @@ cargo_build = custom_target(
 
 subdir('data')
 
-meson.add_install_script('build-aux/meson-post-install.sh')
+gnome = import('gnome')
+
+gnome.post_install(
+  glib_compile_schemas: true,
+  gtk_update_icon_cache: true,
+  update_desktop_database: true
+)
