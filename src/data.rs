@@ -1,5 +1,28 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+#[derive(Debug)]
+pub enum Source {
+    CrauQueryCommand,
+    File(PathBuf),
+}
+
+impl Source {
+    pub fn command() -> Result<Self> {
+        Command::new("crau-query")
+            .args(["--version"])
+            .status()
+            .map(|_| Source::CrauQueryCommand)
+            .map_err(Into::into)
+    }
+
+    pub fn file(path: impl AsRef<Path>) -> Self {
+        Source::File(path.as_ref().to_path_buf())
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AuditEvent {

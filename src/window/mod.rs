@@ -1,10 +1,9 @@
 mod imp;
 
-use crate::data::{AuditEvent, TreeNode};
+use crate::data::{AuditEvent, Source, TreeNode};
 use anyhow::Result;
 use gtk4::{gio, glib, prelude::*, subclass::prelude::*};
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 
 glib::wrapper! {
@@ -19,31 +18,22 @@ impl Window {
         glib::Object::builder().property("application", app).build()
     }
 
-    pub fn set_path(&self, path: impl AsRef<Path>) {
-        *self.imp().path.borrow_mut() = Some(path.as_ref().to_path_buf());
+    pub fn set_source(&self, source: Source) {
+        *self.imp().source.borrow_mut() = Some(source);
         self.imp().reload_button.set_sensitive(true);
     }
 
-    pub fn check_crau_query(&self) -> bool {
-        if Command::new("crau-query")
-            .args(["--version"])
-            .status()
-            .is_ok()
-        {
-            self.imp().reload_button.set_sensitive(true);
-            return true;
-        }
-        false
-    }
-
     pub fn reload(&self) -> Result<()> {
-        let events: Vec<AuditEvent> = if let Ok(content) = Command::new("crau-query").output() {
-            serde_json::from_slice(&content.stdout)?
-        } else if let Some(ref path) = *self.imp().path.borrow() {
-            let content = fs::read_to_string(path)?;
-            serde_json::from_str(&content)?
-        } else {
-            return Ok(());
+        let events: Vec<AuditEvent> = match *self.imp().source.borrow() {
+            Some(Source::CrauQueryCommand) => {
+                let content = Command::new("crau-query").output()?;
+                serde_json::from_slice(&content.stdout)?
+            },
+            Some(Source::File(ref path)) => {
+                let content = fs::read_to_string(path)?;
+                serde_json::from_str(&content)?
+            },
+            None => return Ok(()),
         };
 
         let tree = TreeNode::from_events(&events);

@@ -6,6 +6,7 @@ mod window;
 use adw::prelude::*;
 use adw::{glib, AboutWindow, Application};
 use gtk4::{gio, subclass::prelude::*};
+use data::Source;
 use window::Window;
 
 const APP_ID: &str = "org.gnome.CryptoUsageAnalyzer";
@@ -61,7 +62,7 @@ fn build_ui(app: &Application) {
             if response == gtk4::ResponseType::Accept {
                 if let Some(file) = dialog.file() {
                     if let Some(path) = file.path() {
-                        window_clone.set_path(path);
+                        window_clone.set_source(Source::file(path));
                         if let Err(e) = window_clone.reload() {
                             window_clone.show_toast(&e.to_string());
                         }
@@ -126,7 +127,8 @@ fn build_ui(app: &Application) {
     });
     app.add_action(&reload_action);
 
-    if window.check_crau_query() {
+    if let Ok(source) = Source::command() {
+        window.set_source(source);
         if let Err(e) = window.reload() {
             window.show_toast(&e.to_string());
         }

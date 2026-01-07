@@ -1,3 +1,4 @@
+use crate::data::Source;
 use crate::models::{StatsObject, TreeNodeObject};
 use crate::sunburst_chart::SunburstChart;
 use adw::subclass::prelude::*;
@@ -6,7 +7,6 @@ use gtk4::{
     SingleSelection, TreeListModel, TreeListRow,
 };
 use std::cell::RefCell;
-use std::path::PathBuf;
 
 #[derive(Debug, Default, CompositeTemplate)]
 #[template(resource = "/org/gnome/CryptoUsageAnalyzer/ui/window.ui")]
@@ -40,8 +40,7 @@ pub struct Window {
     #[template_child]
     pub period_duration_label: TemplateChild<gtk4::Label>,
 
-    // Current file path
-    pub path: RefCell<Option<PathBuf>>,
+    pub source: RefCell<Option<Source>>,
 }
 
 #[glib::object_subclass]

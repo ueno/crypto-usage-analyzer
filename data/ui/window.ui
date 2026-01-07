@@ -3,10 +3,6 @@
   <menu id="primary_menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">Open File</attribute>
-        <attribute name="action">app.open</attribute>
-      </item>
-      <item>
         <attribute name="label" translatable="yes">Detailed View</attribute>
         <attribute name="action">app.detailed-view</attribute>
       </item>
