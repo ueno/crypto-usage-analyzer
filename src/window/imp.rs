@@ -130,7 +130,7 @@ impl Window {
         let list_item = list_item.downcast_ref::<ListItem>().unwrap();
         let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
         let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.algorithm());
+        label.set_text(&stats_obj.name());
     }
 
     #[template_callback]

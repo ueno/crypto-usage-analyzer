@@ -58,7 +58,7 @@ mod imp_stats {
     #[properties(wrapper_type = super::StatsObject)]
     pub struct StatsObject {
         #[property(get, set)]
-        pub(super) algorithm: RefCell<String>,
+        pub(super) name: RefCell<String>,
         #[property(get, set)]
         pub(super) count: RefCell<u64>,
         #[property(get, set)]
@@ -80,9 +80,9 @@ glib::wrapper! {
 }
 
 impl StatsObject {
-    pub fn new(algorithm: &str, count: u64, total: u64) -> Self {
+    pub fn new(name: &str, count: u64, total: u64) -> Self {
         Object::builder()
-            .property("algorithm", algorithm)
+            .property("name", name)
             .property("count", count)
             .property("total", total)
             .build()
@@ -119,7 +119,7 @@ mod imp_stats_sorter {
             let item2 = item2.downcast_ref::<StatsObject>().unwrap();
             let ordering: Ordering = item2.count().cmp(&item1.count()).into();
             if ordering == Ordering::Equal {
-                return item2.algorithm().cmp(&item1.algorithm()).into();
+                return item2.name().cmp(&item1.name()).into();
             }
             ordering
         }
