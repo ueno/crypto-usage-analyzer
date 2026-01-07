@@ -341,8 +341,7 @@ impl SunburstChart {
         let mut stats_vec: Vec<_> = stats.into_iter().collect();
         stats_vec.sort_by(|a, b| b.1.cmp(&a.1));
 
-        // Populate store with top 5 only
-        for (event_name, count) in stats_vec.iter().take(5) {
+        for (event_name, count) in stats_vec.iter() {
             let percentage = if total > 0 {
                 (count * 100) as f64 / total as f64
             } else {

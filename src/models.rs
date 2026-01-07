@@ -2,6 +2,7 @@ use glib::Object;
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::subclass::prelude::*;
+use gtk4::{Ordering, Sorter};
 use std::cell::RefCell;
 
 // TreeNodeObject - GObject wrapper for tree node data
@@ -88,5 +89,44 @@ impl StatsObject {
             .property("count", count)
             .property("percentage", percentage)
             .build()
+    }
+}
+
+// StatsSorter - GObject wrapper for sorting statistics data
+mod imp_stats_sorter {
+    use super::*;
+
+    #[derive(Default)]
+    pub struct StatsSorter {}
+
+    #[glib::object_subclass]
+    impl ObjectSubclass for StatsSorter {
+        const NAME: &'static str = "StatsSorter";
+        type Type = super::StatsSorter;
+        type ParentType = Sorter;
+    }
+
+    impl ObjectImpl for StatsSorter {}
+
+    impl SorterImpl for StatsSorter {
+        fn compare(&self, item1: &Object, item2: &Object) -> Ordering {
+            let item1 = item1.downcast_ref::<StatsObject>().unwrap();
+            let item2 = item2.downcast_ref::<StatsObject>().unwrap();
+            let ordering: Ordering = item2.count().cmp(&item1.count()).into();
+            if ordering == Ordering::Equal {
+                return item2.algorithm().cmp(&item1.algorithm()).into();
+            }
+            ordering
+        }
+    }
+}
+
+glib::wrapper! {
+    pub struct StatsSorter(ObjectSubclass<imp_stats_sorter::StatsSorter>);
+}
+
+impl StatsSorter {
+    pub fn new() -> Self {
+        Object::builder().build()
     }
 }

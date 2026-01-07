@@ -197,9 +197,16 @@
 						<property name="model">
 						  <object class="GtkNoSelection" id="event_stats_selection">
                                                     <property name="model">
-                                                      <object class="GListStore" id="event_stats_store">
-							<property name="item-type">StatsObject</property>
-                                                      </object>
+						      <object class="GtkSortListModel">
+							<property name="model">
+							  <object class="GListStore" id="event_stats_store">
+							    <property name="item-type">StatsObject</property>
+							  </object>
+							</property>
+							<property name="sorter">
+							  <object class="StatsSorter"/>
+							</property>
+						      </object>
                                                     </property>
 						  </object>
 						</property>
@@ -284,9 +291,16 @@
 						<property name="model">
 						  <object class="GtkNoSelection" id="stats_selection">
                                                     <property name="model">
-                                                      <object class="GListStore" id="stats_store">
-							<property name="item-type">StatsObject</property>
-                                                      </object>
+						      <object class="GtkSortListModel">
+							<property name="model">
+							  <object class="GListStore" id="stats_store">
+							    <property name="item-type">StatsObject</property>
+							  </object>
+							</property>
+							<property name="sorter">
+							  <object class="StatsSorter"/>
+							</property>
+						      </object>
                                                     </property>
 						  </object>
 						</property>

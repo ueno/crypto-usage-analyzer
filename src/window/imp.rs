@@ -1,5 +1,5 @@
 use crate::data::Source;
-use crate::models::{StatsObject, TreeNodeObject};
+use crate::models::{StatsObject, StatsSorter, TreeNodeObject};
 use crate::sunburst_chart::SunburstChart;
 use adw::subclass::prelude::*;
 use gtk4::{
@@ -53,6 +53,7 @@ impl ObjectSubclass for Window {
         // Register custom widget types before loading UI
         SunburstChart::ensure_type();
         StatsObject::ensure_type();
+        StatsSorter::ensure_type();
         TreeNodeObject::ensure_type();
 
         klass.bind_template();

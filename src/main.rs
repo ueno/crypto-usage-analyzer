@@ -5,8 +5,8 @@ mod window;
 
 use adw::prelude::*;
 use adw::{glib, AboutWindow, Application};
-use gtk4::{gio, subclass::prelude::*};
 use data::Source;
+use gtk4::{gio, subclass::prelude::*};
 use window::Window;
 
 const APP_ID: &str = "org.gnome.CryptoUsageAnalyzer";

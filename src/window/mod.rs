@@ -28,11 +28,11 @@ impl Window {
             Some(Source::CrauQueryCommand) => {
                 let content = Command::new("crau-query").output()?;
                 serde_json::from_slice(&content.stdout)?
-            },
+            }
             Some(Source::File(ref path)) => {
                 let content = fs::read_to_string(path)?;
                 serde_json::from_str(&content)?
-            },
+            }
             None => return Ok(()),
         };
 
