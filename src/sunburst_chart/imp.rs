@@ -312,8 +312,7 @@ impl SunburstChart {
 
         // Populate store
         for (name, count) in stats_vec {
-            let stats_obj =
-                StatsObject::new(&name, count as u64, total as u64);
+            let stats_obj = StatsObject::new(&name, count as u64, total as u64);
             store.append(&stats_obj);
         }
     }
@@ -336,11 +335,7 @@ impl SunburstChart {
         stats_vec.sort_by(|a, b| b.1.cmp(&a.1));
 
         for (event_name, count) in stats_vec {
-            let stats_obj = StatsObject::new(
-                &event_name,
-                count as u64,
-                total as u64,
-            );
+            let stats_obj = StatsObject::new(&event_name, count as u64, total as u64);
             store.append(&stats_obj);
         }
     }
