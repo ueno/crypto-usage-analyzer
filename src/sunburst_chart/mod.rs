@@ -34,10 +34,10 @@ impl SunburstChart {
         *imp.original_data.borrow_mut() = Some(data.clone());
 
         // Apply simple view if enabled
-        let display_data = if *imp.simple_view.borrow() {
-            data.create_simple_view()
-        } else {
+        let display_data = if *imp.detailed_view.borrow() {
             data.clone()
+        } else {
+            data.create_simple_view()
         };
 
         *imp.data.borrow_mut() = Some(display_data.clone());
@@ -71,19 +71,19 @@ impl SunburstChart {
         self.queue_draw();
     }
 
-    pub fn toggle_simple_view(&self) {
+    pub fn toggle_detailed_view(&self) {
         let imp = self.imp();
 
         // Toggle the flag
-        let new_value = !*imp.simple_view.borrow();
-        *imp.simple_view.borrow_mut() = new_value;
+        let new_value = !*imp.detailed_view.borrow();
+        *imp.detailed_view.borrow_mut() = new_value;
 
         // Recompute the data view
         if let Some(original) = imp.original_data.borrow().as_ref() {
             let display_data = if new_value {
-                original.create_simple_view()
-            } else {
                 original.clone()
+            } else {
+                original.create_simple_view()
             };
 
             *imp.data.borrow_mut() = Some(display_data.clone());
@@ -119,8 +119,8 @@ impl SunburstChart {
         }
     }
 
-    pub fn is_simple_view(&self) -> bool {
-        *self.imp().simple_view.borrow()
+    pub fn is_detailed_view(&self) -> bool {
+        *self.imp().detailed_view.borrow()
     }
 
     pub fn set_tree_store(&self, tree_store: gio::ListStore) {

@@ -77,9 +77,8 @@ fn build_ui(app: &Application) {
     app.add_action(&open_action);
 
     // Set up "detailed-view" stateful action (toggle menu item)
-    // Note: The action state is inverted - checked means detailed view (simple_view = false)
     let chart_clone = window.imp().sunburst_chart.clone();
-    let initial_state = !window.imp().sunburst_chart.is_simple_view(); // Inverse: checked = detailed, unchecked = simple
+    let initial_state = window.imp().sunburst_chart.is_detailed_view();
     let detailed_view_action =
         gio::SimpleAction::new_stateful("detailed-view", None, &initial_state.to_variant());
 
@@ -88,11 +87,8 @@ fn build_ui(app: &Application) {
             let show_detailed: bool = state.get().unwrap();
             action.set_state(state);
 
-            // show_detailed is the inverse of simple_view
-            // If show_detailed is true, we want simple_view to be false, and vice versa
-            let should_be_simple = !show_detailed;
-            if chart_clone.is_simple_view() != should_be_simple {
-                chart_clone.toggle_simple_view();
+            if chart_clone.is_detailed_view() != show_detailed {
+                chart_clone.toggle_detailed_view();
             }
         }
     });

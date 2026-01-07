@@ -46,7 +46,7 @@ impl Segment {
 pub struct SunburstChart {
     pub data: RefCell<Option<TreeNode>>,
     pub original_data: RefCell<Option<TreeNode>>,
-    pub simple_view: RefCell<bool>,
+    pub detailed_view: RefCell<bool>,
     pub segments: RefCell<Vec<Segment>>,
     pub hover_segment: RefCell<Option<usize>>,
     pub zoom_node: RefCell<Option<TreeNode>>,
@@ -79,9 +79,6 @@ impl ObjectImpl for SunburstChart {
         obj.set_vexpand(true);
         obj.set_hexpand(true);
         obj.set_has_tooltip(true);
-
-        // Initialize simple_view to true
-        *self.simple_view.borrow_mut() = true;
 
         // Set up drawing
         obj.set_draw_func(glib::clone!(
