@@ -7,10 +7,6 @@
         <attribute name="action">app.detailed-view</attribute>
       </item>
       <item>
-        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
-        <attribute name="action">app.shortcuts</attribute>
-      </item>
-      <item>
         <attribute name="label" translatable="yes">About Crypto Usage Analyzer</attribute>
         <attribute name="action">app.about</attribute>
       </item>
