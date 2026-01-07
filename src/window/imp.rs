@@ -122,7 +122,7 @@ impl Window {
             .and_downcast::<TreeNodeObject>()
             .unwrap();
         let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&tree_node.count());
+        label.set_text(&format!("{}", tree_node.count()));
     }
 
     #[template_callback]
@@ -147,7 +147,7 @@ impl Window {
         let list_item = list_item.downcast_ref::<ListItem>().unwrap();
         let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
         let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.count());
+        label.set_text(&format!("{}", stats_obj.count()));
     }
 
     #[template_callback]
@@ -164,7 +164,7 @@ impl Window {
         let list_item = list_item.downcast_ref::<ListItem>().unwrap();
         let stats_obj = list_item.item().and_downcast::<StatsObject>().unwrap();
         let label = list_item.child().and_downcast::<Label>().unwrap();
-        label.set_text(&stats_obj.percentage());
+        label.set_text(&format!("{:.1}%", stats_obj.percentage()));
     }
 
     #[template_callback]

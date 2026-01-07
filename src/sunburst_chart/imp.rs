@@ -279,7 +279,7 @@ impl SunburstChart {
     }
 
     pub fn tree_node_to_object(node: &TreeNode) -> TreeNodeObject {
-        let obj = TreeNodeObject::new(&node.name, &node.value.to_string(), node.value as u32);
+        let obj = TreeNodeObject::new(&node.name, node.value as u64);
 
         if !node.children.is_empty() {
             let children_store = gio::ListStore::new::<TreeNodeObject>();
@@ -312,14 +312,8 @@ impl SunburstChart {
 
         // Populate store
         for (algorithm, count) in stats_vec {
-            let percentage = if total > 0 {
-                (count as f64 / total as f64 * 100.0).round() as u32
-            } else {
-                0
-            };
-
             let stats_obj =
-                StatsObject::new(&algorithm, &count.to_string(), &format!("{}%", percentage));
+                StatsObject::new(&algorithm, count as u64, total as u64);
             store.append(&stats_obj);
         }
     }
@@ -341,17 +335,11 @@ impl SunburstChart {
         let mut stats_vec: Vec<_> = stats.into_iter().collect();
         stats_vec.sort_by(|a, b| b.1.cmp(&a.1));
 
-        for (event_name, count) in stats_vec.iter() {
-            let percentage = if total > 0 {
-                (count * 100) as f64 / total as f64
-            } else {
-                0.0
-            };
-
+        for (event_name, count) in stats_vec {
             let stats_obj = StatsObject::new(
-                event_name,
-                &count.to_string(),
-                &format!("{:.1}%", percentage),
+                &event_name,
+                count as u64,
+                total as u64,
             );
             store.append(&stats_obj);
         }

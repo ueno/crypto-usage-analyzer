@@ -15,9 +15,7 @@ mod imp_tree_node {
         #[property(get, set)]
         pub(super) name: RefCell<String>,
         #[property(get, set)]
-        pub(super) count: RefCell<String>,
-        #[property(get, set)]
-        pub(super) value: RefCell<u32>,
+        pub(super) count: RefCell<u64>,
         pub(super) children: RefCell<Option<gtk4::gio::ListStore>>,
     }
 
@@ -36,11 +34,10 @@ glib::wrapper! {
 }
 
 impl TreeNodeObject {
-    pub fn new(name: &str, count: &str, value: u32) -> Self {
+    pub fn new(name: &str, count: u64) -> Self {
         Object::builder()
             .property("name", name)
             .property("count", count)
-            .property("value", value)
             .build()
     }
 
@@ -63,9 +60,9 @@ mod imp_stats {
         #[property(get, set)]
         pub(super) algorithm: RefCell<String>,
         #[property(get, set)]
-        pub(super) count: RefCell<String>,
+        pub(super) count: RefCell<u64>,
         #[property(get, set)]
-        pub(super) percentage: RefCell<String>,
+        pub(super) total: RefCell<u64>,
     }
 
     #[glib::object_subclass]
@@ -83,12 +80,20 @@ glib::wrapper! {
 }
 
 impl StatsObject {
-    pub fn new(algorithm: &str, count: &str, percentage: &str) -> Self {
+    pub fn new(algorithm: &str, count: u64, total: u64) -> Self {
         Object::builder()
             .property("algorithm", algorithm)
             .property("count", count)
-            .property("percentage", percentage)
+            .property("total", total)
             .build()
+    }
+
+    pub fn percentage(&self) -> f64 {
+        if self.total() > 0 {
+            self.count() as f64 / self.total() as f64 * 100.0
+        } else {
+            0f64
+        }
     }
 }
 
