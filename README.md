@@ -1,6 +1,6 @@
 # Crypto Usage Analyzer
 
-A native GNOME application for visualizing crypto-auditing data with an interactive sunburst chart, inspired by Baobab's disk usage visualization. Built with modern libadwaita design principles.
+A native GNOME application for visualizing [crypto-auditing][crypto-auditing] data with an interactive sunburst chart, inspired by [Baobab][baobab]'s disk usage visualization. Built with modern libadwaita design principles.
 
 ## Screenshots
 
@@ -62,3 +62,6 @@ For detailed interaction patterns, data format specifications, and architecture 
 ## License
 
 GPL3-or-later
+
+[baobab]: https://apps.gnome.org/Baobab/
+[crypto-auditing]: https://github.com/latchset/crypto-auditing
