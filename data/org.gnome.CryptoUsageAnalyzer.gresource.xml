@@ -2,5 +2,6 @@
 <gresources>
   <gresource prefix="/org/gnome/CryptoUsageAnalyzer">
     <file compressed="true">ui/window.ui</file>
+    <file compressed="true" alias="shortcuts-dialog.ui">ui/shortcuts.ui</file>
   </gresource>
 </gresources>

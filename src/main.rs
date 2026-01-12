@@ -123,6 +123,13 @@ fn build_ui(app: &Application) {
     });
     app.add_action(&reload_action);
 
+    // Set keyboard shortcuts
+    app.set_accels_for_action("app.open", &["<Ctrl>o"]);
+    app.set_accels_for_action("app.reload", &["<Ctrl>r"]);
+    app.set_accels_for_action("app.detailed-view", &["<Ctrl>d"]);
+    app.set_accels_for_action("app.quit", &["<Ctrl>q"]);
+    app.set_accels_for_action("window.close", &["<Ctrl>w"]);
+
     if let Ok(source) = Source::command() {
         window.set_source(source);
         if let Err(e) = window.reload() {
