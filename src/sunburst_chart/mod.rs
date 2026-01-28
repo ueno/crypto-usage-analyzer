@@ -8,7 +8,6 @@ use gtk4::subclass::prelude::*;
 use gtk4::{gio, glib, ColumnView, Label};
 use std::f64::consts::PI;
 use std::time::{Duration, UNIX_EPOCH};
-use sysinfo::System;
 
 glib::wrapper! {
     pub struct SunburstChart(ObjectSubclass<imp::SunburstChart>)
@@ -150,12 +149,10 @@ impl SunburstChart {
         let imp = self.imp();
         let events = imp.events.borrow();
 
-        if let Some((start_ns, end_ns)) = AuditEvent::get_time_range(&events) {
+        if let Some((start_secs, end_secs)) = AuditEvent::get_time_range(&events) {
             // Format as human-readable dates
-            let boot_time = UNIX_EPOCH + Duration::from_secs(System::boot_time());
-
-            let start_time = boot_time + Duration::from_nanos(start_ns);
-            let end_time = boot_time + Duration::from_nanos(end_ns);
+            let start_time = UNIX_EPOCH + Duration::from_secs_f64(start_secs);
+            let end_time = UNIX_EPOCH + Duration::from_secs_f64(end_secs);
 
             let start_time: jiff::Timestamp = start_time.try_into().unwrap();
             let end_time: jiff::Timestamp = end_time.try_into().unwrap();

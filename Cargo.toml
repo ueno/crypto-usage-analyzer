@@ -12,7 +12,6 @@ serde_json = "1.0"
 cairo-rs = { version = "0.20", features = ["png"] }
 anyhow = "1.0"
 jiff = { version = "0.2", features = ["std"] }
-sysinfo = "0.37"
 
 [[bin]]
 name = "crypto-usage-analyzer"

@@ -28,8 +28,8 @@ impl Source {
 pub struct AuditEvent {
     pub context: String,
     pub origin: String,
-    pub start: u64,
-    pub end: u64,
+    pub start: f64,
+    pub end: f64,
     pub events: HashMap<String, serde_json::Value>,
     #[serde(default)]
     pub spans: Vec<AuditEvent>,
@@ -110,15 +110,15 @@ pub struct TreeNode {
 }
 
 impl AuditEvent {
-    pub fn get_time_range(events: &[AuditEvent]) -> Option<(u64, u64)> {
+    pub fn get_time_range(events: &[AuditEvent]) -> Option<(f64, f64)> {
         if events.is_empty() {
             return None;
         }
 
-        let mut min_start = u64::MAX;
-        let mut max_end = u64::MIN;
+        let mut min_start = f64::MAX;
+        let mut max_end = f64::MIN;
 
-        fn update_range(event: &AuditEvent, min_start: &mut u64, max_end: &mut u64) {
+        fn update_range(event: &AuditEvent, min_start: &mut f64, max_end: &mut f64) {
             *min_start = (*min_start).min(event.start);
             *max_end = (*max_end).max(event.end);
 
@@ -131,7 +131,7 @@ impl AuditEvent {
             update_range(event, &mut min_start, &mut max_end);
         }
 
-        if min_start == u64::MAX || max_end == u64::MIN {
+        if min_start == f64::MAX || max_end == f64::MIN {
             None
         } else {
             Some((min_start, max_end))
